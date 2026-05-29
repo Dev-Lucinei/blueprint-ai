@@ -1,0 +1,245 @@
+import React from 'react';
+import type { AIProvider } from '../../types';
+import { PROVIDER_MODELS, getDefaultModel } from '../../types';
+
+const isApiKeyConfigured = (provider: AIProvider): boolean => {
+  const keys: Record<AIProvider, string> = {
+    gemini: (import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_API_KEY || '') as string,
+    openrouter: (import.meta.env.VITE_OPENROUTER_API_KEY || '') as string,
+    openai: (import.meta.env.VITE_OPENAI_API_KEY || '') as string,
+  };
+  return !!keys[provider];
+};
+
+interface ProjectTabProps {
+  projectName: string;
+  setProjectName: (name: string) => void;
+  projectDeadline: string;
+  setProjectDeadline: (date: string) => void;
+  projectDescription: string;
+  setProjectDescription: (desc: string) => void;
+  onGenerate: () => void;
+  isLoading: boolean;
+  aiProvider: AIProvider;
+  setAiProvider: (p: AIProvider) => void;
+  aiModel: string;
+  setAiModel: (m: string) => void;
+}
+
+const Card: React.FC<{ children: React.ReactNode; title: string }> = ({ children, title }) => (
+  <div className="bg-slate-800/50 border border-slate-700 rounded-2xl shadow-lg">
+    <div className="p-4 border-b border-slate-700">
+      <h2 className="text-lg font-semibold text-indigo-300">{title}</h2>
+    </div>
+    <div className="p-6">{children}</div>
+  </div>
+);
+
+const InputField: React.FC<{
+  id: string;
+  label: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  type?: string;
+  placeholder?: string;
+  helpText: string;
+}> = ({ id, label, value, onChange, type = 'text', placeholder, helpText }) => (
+  <div>
+    <label htmlFor={id} className="block text-sm font-medium text-slate-300">
+      {label}
+    </label>
+    <input
+      type={type}
+      id={id}
+      value={value}
+      onChange={onChange}
+      className="mt-1 block w-full p-3 bg-slate-900/70 border border-slate-600 rounded-lg text-slate-100 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition"
+      placeholder={placeholder}
+    />
+    <p className="text-xs text-slate-500 mt-1">{helpText}</p>
+  </div>
+);
+
+const TextAreaField: React.FC<{
+  id: string;
+  label: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  placeholder?: string;
+  helpText: string;
+}> = ({ id, label, value, onChange, placeholder, helpText }) => (
+  <div>
+    <label htmlFor={id} className="block text-sm font-medium text-slate-300">
+      {label}
+    </label>
+    <textarea
+      id={id}
+      rows={6}
+      value={value}
+      onChange={onChange}
+      className="mt-1 block w-full p-3 bg-slate-900/70 border border-slate-600 rounded-lg text-slate-100 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition"
+      placeholder={placeholder}
+    ></textarea>
+    <p className="text-xs text-slate-500 mt-1">{helpText}</p>
+  </div>
+);
+
+const ProjectTab: React.FC<ProjectTabProps> = ({
+  projectName,
+  setProjectName,
+  projectDeadline,
+  setProjectDeadline,
+  projectDescription,
+  setProjectDescription,
+  onGenerate,
+  isLoading,
+  aiProvider,
+  setAiProvider,
+  aiModel,
+  setAiModel,
+}) => {
+  const providers: { id: AIProvider; name: string }[] = [
+    { id: 'gemini', name: 'Google Gemini' },
+    { id: 'openrouter', name: 'OpenRouter' },
+    { id: 'openai', name: 'OpenAI' },
+  ];
+
+  const handleProviderChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const p = e.target.value as AIProvider;
+    setAiProvider(p);
+    setAiModel(getDefaultModel(p));
+  };
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <Card title="Configurações de IA">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label htmlFor="provider" className="block text-sm font-medium text-slate-300">
+              Provedor de IA
+            </label>
+            <select
+              id="provider"
+              value={aiProvider}
+              onChange={handleProviderChange}
+              className="mt-1 block w-full p-3 bg-slate-900/70 border border-slate-600 rounded-lg text-slate-100 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition"
+            >
+              {providers.map(p => (
+                <option key={p.id} value={p.id}>
+                  {p.name} {!isApiKeyConfigured(p.id) ? '(sem API key)' : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="model" className="block text-sm font-medium text-slate-300">
+              Modelo
+            </label>
+            <select
+              id="model"
+              value={aiModel}
+              onChange={e => setAiModel(e.target.value)}
+              className="mt-1 block w-full p-3 bg-slate-900/70 border border-slate-600 rounded-lg text-slate-100 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition"
+            >
+              {PROVIDER_MODELS[aiProvider].map(m => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </Card>
+
+      <Card title="Detalhes do Projeto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <InputField
+            id="projectName"
+            label="Nome do Projeto *"
+            value={projectName}
+            onChange={e => setProjectName(e.target.value)}
+            placeholder="Ex: Sistema de Gestão de Vendas"
+            helpText="Nome descritivo para identificar seu projeto."
+          />
+          <InputField
+            id="projectDeadline"
+            label="Prazo Estimado"
+            type="date"
+            value={projectDeadline}
+            onChange={e => setProjectDeadline(e.target.value)}
+            helpText="Data limite para conclusão do projeto."
+          />
+        </div>
+      </Card>
+
+      <Card title="Descrição Principal">
+        <TextAreaField
+          id="descricaoProjeto"
+          label="Descrição de Alto Nível *"
+          value={projectDescription}
+          onChange={e => setProjectDescription(e.target.value)}
+          placeholder={`Template Sugerido:\n(1) Propósito de Negócio: [Qual problema resolve?]\n(2) Funcionalidades Críticas: [3-5 features principais]\n(3) Exclusões Conhecidas: [O que NÃO será implementado]`}
+          helpText="Descreva o propósito, funcionalidades principais e limitações do projeto."
+        />
+      </Card>
+
+      <div className="bg-slate-800/50 border border-slate-700 rounded-2xl shadow-lg p-6">
+        <button
+          type="button"
+          onClick={onGenerate}
+          disabled={isLoading}
+          className="w-full py-4 px-6 text-lg font-semibold text-white rounded-lg transition-all duration-300 ease-in-out bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-indigo-500/50 flex items-center justify-center"
+        >
+          {isLoading ? (
+            <>
+              <svg
+                className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+              Gerando...
+            </>
+          ) : (
+            <>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6 inline mr-2"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M13 10V3L4 14h7v7l9-11h-7z"
+                />
+              </svg>
+              Gerar Documentação Completa
+            </>
+          )}
+        </button>
+        <p className="text-xs text-slate-400 mt-2 text-center">
+          Adicione contexto na aba "Conteúdo" para um resultado mais preciso.
+        </p>
+      </div>
+    </div>
+  );
+};
+
+export default ProjectTab;
