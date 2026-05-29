@@ -20,6 +20,8 @@ const STEPS: StepDef[] = [
   { id: 'cartographer', name: 'Cartographer', getPrompt: getCartographerSystemPrompt },
 ];
 
+export const PIPELINE_STEPS = STEPS.map(s => ({ id: s.id, name: s.name }));
+
 function buildContext(projectDescription: string, files: FileObject[]): string {
   const fileList = files
     .map(f => `--- ${f.file.name} ---\n${f.content}`)
