@@ -1,7 +1,8 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { Tab, FileObject, AIProvider, AIConfig, getDefaultModel } from './types';
+import { Tab, FileObject, AIProvider, AIConfig, AppMode, getDefaultModel } from './types';
 import { getDocSystemInstruction, getRefinementSystemInstruction } from './services/geminiService';
 import { aiClient } from './services/aiProvider';
+import { usePipeline } from './hooks/usePipeline';
 import Header from './components/Header';
 import DesktopTabs from './components/DesktopTabs';
 import MobileTabs from './components/MobileTabs';
@@ -9,6 +10,7 @@ import ProjectTab from './components/tabs/ProjectTab';
 import ContentTab from './components/tabs/ContentTab';
 import ActionsTab from './components/tabs/ActionsTab';
 import ResultsTab from './components/tabs/ResultsTab';
+import AnalyzeTab from './components/AnalyzeTab';
 import Toast from './components/Toast';
 import ProjectVisualizerModal from './components/ProjectVisualizerModal';
 
@@ -22,6 +24,7 @@ declare global {
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>('projeto');
+  const [appMode, setAppMode] = useState<AppMode>('documentacao');
   const [projectName, setProjectName] = useState('');
   const [projectDeadline, setProjectDeadline] = useState('');
   const [projectDescription, setProjectDescription] = useState('');
@@ -37,6 +40,11 @@ const App: React.FC = () => {
 
   const [aiProvider, setAiProvider] = useState<AIProvider>('gemini');
   const [aiModel, setAiModel] = useState<string>('gemini-2.5-flash');
+
+  const pipeline = usePipeline((stepId, content) => {
+    console.log(`Pipeline step ${stepId} completed`);
+  });
+  const { pipelineState } = pipeline;
 
   useEffect(() => {
     const defaults: Record<AIProvider, string> = {
@@ -87,12 +95,17 @@ const App: React.FC = () => {
     setGeneratedMarkdown('');
 
     const fullQuery = getFullQuery();
+    let finalQuery = fullQuery;
+
+    if (appMode === 'analise' && pipelineState?.accumulatedContext) {
+      finalQuery += `\n\n## Contexto Adicional da Análise de Código\n${pipelineState.accumulatedContext}`;
+    }
 
     try {
       const config: AIConfig = { provider: aiProvider, model: aiModel };
       const systemInstruction = getDocSystemInstruction(projectDescription, contextText);
 
-      const response = await aiClient.generate(fullQuery, config, {
+      const response = await aiClient.generate(finalQuery, config, {
         systemInstruction,
       });
 
@@ -107,7 +120,7 @@ const App: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [projectDescription, getFullQuery, contextText, showToast, aiProvider, aiModel]);
+  }, [projectDescription, getFullQuery, contextText, showToast, aiProvider, aiModel, appMode, pipelineState]);
 
   const handleRefine = useCallback(async (refinementQuery: string) => {
     if (!generatedMarkdown) {
@@ -163,9 +176,9 @@ const App: React.FC = () => {
     <div className="min- h-screen flex flex-col bg-surface-dark text-text-primary">
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
-      <Header />
+      <Header mode={appMode} setMode={setAppMode} />
 
-      <DesktopTabs activeTab={activeTab} setActiveTab={setActiveTab} />
+      <DesktopTabs activeTab={activeTab} setActiveTab={setActiveTab} mode={appMode} />
 
       <main className="flex-1 container mx-auto p-4 lg:px-8 xl:px-4 max-w-7xl overflow-y-auto pb-24 lg:pb-4">
         <div className={activeTab === 'projeto' ? '' : 'hidden'}>
@@ -211,9 +224,17 @@ const App: React.FC = () => {
             showToast={showToast}
           />
         </div>
+        <div className={activeTab === 'analisar' ? '' : 'hidden'}>
+          <AnalyzeTab
+            pipeline={pipeline}
+            projectDescription={projectDescription}
+            files={files}
+            aiConfig={{ provider: aiProvider, model: aiModel }}
+          />
+        </div>
       </main>
 
-      <MobileTabs activeTab={activeTab} setActiveTab={setActiveTab} />
+      <MobileTabs activeTab={activeTab} setActiveTab={setActiveTab} mode={appMode} />
 
       <ProjectVisualizerModal
         isOpen={isModalOpen}
