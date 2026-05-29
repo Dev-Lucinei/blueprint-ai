@@ -64,3 +64,46 @@ export interface LinkValidationResult {
   status: number | 'checking' | 'error';
   statusText: string;
 }
+
+export interface AnalysisStep {
+  id: 'scout' | 'archaeologist' | 'architect' | 'cartographer';
+  name: string;
+  instruction: string;
+  output: keyof ExtractedContext | 'fullAnalysis';
+}
+
+export interface PipelineState {
+  currentStep: number;
+  isRunning: boolean;
+  results: Array<{ stepId: string; content: string; status: 'pending' | 'running' | 'done' | 'error' }>;
+  accumulatedContext: string;
+}
+
+export interface GraphNode {
+  id: string;
+  label: string;
+  type: 'file' | 'entity' | 'endpoint' | 'tech';
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  fx?: number | null;
+  fy?: number | null;
+  size: number;
+}
+
+export interface GraphLink {
+  source: string;
+  target: string;
+  type: string;
+}
+
+export interface ExtractedContext {
+  projectStructure: string;
+  technologies: string;
+  entryPoints: string;
+  dependencies: string;
+  entities: string;
+  architecture: string;
+  dataFlow: string;
+}
