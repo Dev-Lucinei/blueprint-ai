@@ -1,0 +1,6 @@
+{
+  "name": "Blueprint AI",
+  "description": "An intelligent application that generates comprehensive professional and technical documentation for software projects. Users provide high-level project details, and the AI produces a complete implementation blueprint, including architecture, requirements, WBS, and more, in structured Markdown format.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
