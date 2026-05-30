@@ -4,7 +4,7 @@
 
 # 🚀 Blueprint AI
 
-**Blueprint AI** é uma ferramenta poderosa para arquitetos de software e engenheiros de prompt que automatiza a criação de documentações técnicas e gerenciais completas para projetos de software. Utilizando o Google Gemini AI, a ferramenta transforma descrições simples em Blueprints de Implementação detalhados, prontos para serem utilizados por agentes de codificação autônomos ou equipes de desenvolvimento.
+**Blueprint AI** é uma ferramenta poderosa para arquitetos de software e engenheiros de prompt que automatiza a criação de documentações técnicas e gerenciais completas para projetos de software. Utilizando modelos de IA avançados (como Google Gemini, OpenAI e OpenRouter), a ferramenta transforma descrições simples em Blueprints de Implementação detalhados, prontos para serem utilizados por agentes de codificação autônomos ou equipes de desenvolvimento.
 
 ## ✨ Funcionalidades
 
@@ -18,7 +18,7 @@
 
 - **Frontend**: React 19 + Vite 6 + TypeScript 5.8
 - **Estilização**: Tailwind CSS
-- **IA**: Google GenAI SDK (Gemini)
+- **IA**: Google GenAI SDK (Gemini), OpenAI, OpenRouter
 - **Utilitários**: Marked (Markdown Parsing), DOMPurify (Sanitização), Mermaid.js (Diagramas)
 
 ## 🚀 Como Executar Localmente
@@ -43,6 +43,8 @@
    Crie um arquivo `.env.local` na raiz do projeto e adicione sua chave da API do Gemini:
    ```env
    VITE_GEMINI_API_KEY=sua_chave_aqui
+VITE_OPENAI_API_KEY=sua_chave_aqui
+VITE_OPENROUTER_API_KEY=sua_chave_aqui
    ```
 
 4. **Inicie o servidor de desenvolvimento:**

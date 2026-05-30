@@ -1,6 +1,6 @@
 # Blueprint AI
 
-Stack: React 19 + Vite 6 + TypeScript 5.8 + Google GenAI SDK
+Stack: React 19 + Vite 6 + TypeScript 5.8 + Google GenAI SDK, OpenAI, OpenRouter
 
 ## Comandos
 
@@ -15,7 +15,9 @@ npm run preview    # visualizar build
 
 Criar `.env.local` com:
 ```
-GEMINI_API_KEY=sua-chave-aqui
+VITE_GEMINI_API_KEY=sua-chave-aqui
+VITE_OPENAI_API_KEY=sua-chave-aqui
+VITE_OPENROUTER_API_KEY=sua-chave-aqui
 ```
 
 ## Estrutura
