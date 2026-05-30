@@ -1,0 +1,28 @@
+{
+  "app": {
+    "name": "sample-app",
+    "version": "1.0.0",
+    "environment": "development"
+  },
+  "server": {
+    "port": 3000,
+    "host": "localhost",
+    "cors": {
+      "origins": ["http://localhost:5173"],
+      "methods": ["GET", "POST", "PATCH", "DELETE"]
+    }
+  },
+  "database": {
+    "host": "localhost",
+    "port": 5432,
+    "name": "sample_db",
+    "pool": {
+      "min": 2,
+      "max": 10
+    }
+  },
+  "logging": {
+    "level": "info",
+    "format": "json"
+  }
+}
