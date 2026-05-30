@@ -1,5 +1,6 @@
 import { aiClient } from './aiProvider';
 import type { AIConfig, FileObject, PipelineState, GraphNode, GraphLink } from '../types';
+import { validateGraphData } from './graphValidator';
 import {
   getScoutSystemPrompt,
   getArchaeologistSystemPrompt,
@@ -107,6 +108,14 @@ export function parseGraphFromAI(analysis: string): { nodes: GraphNode[]; links:
         target: l.target || '',
         type: l.type || 'dependency',
       })) : [];
+
+    const validation = validateGraphData(nodes, links);
+    if (!validation.valid) {
+      console.error('Graph validation errors:', validation.errors);
+    }
+    if (validation.warnings.length > 0) {
+      console.warn('Graph validation warnings:', validation.warnings);
+    }
 
     return { nodes, links };
   } catch {
