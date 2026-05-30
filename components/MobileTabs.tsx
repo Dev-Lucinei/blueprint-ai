@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Tab } from '../types';
-import { ProjectIcon, ContentIcon, ActionsIcon, ResultsIcon } from './Icons';
+import { ProjectIcon, ContentIcon, AnalyzeIcon, ActionsIcon, ResultsIcon } from './Icons';
 
 interface MobileTabsProps {
   activeTab: Tab;
@@ -12,6 +12,7 @@ const MobileTabs: React.FC<MobileTabsProps> = ({ activeTab, setActiveTab }) => {
   const tabs = [
     { id: 'projeto' as Tab, label: 'Projeto', icon: <ProjectIcon /> },
     { id: 'conteudo' as Tab, label: 'Conteúdo', icon: <ContentIcon /> },
+    { id: 'analisar' as Tab, label: 'Analisar', icon: <AnalyzeIcon /> },
     { id: 'acoes' as Tab, label: 'Ações', icon: <ActionsIcon /> },
     { id: 'resultados' as Tab, label: 'Resultados', icon: <ResultsIcon /> },
   ];

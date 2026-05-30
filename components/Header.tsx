@@ -1,7 +1,12 @@
-
 import React from 'react';
+import { AppMode } from '../types';
 
-const Header: React.FC = () => {
+interface HeaderProps {
+  mode: AppMode;
+  setMode: (mode: AppMode) => void;
+}
+
+const Header: React.FC<HeaderProps> = ({ mode, setMode }) => {
   return (
     <header className="bg-slate-900/80 backdrop-blur-md p-4 shadow-lg sticky top-0 z-40 border-b border-slate-700">
       <div className="container mx-auto flex items-center justify-between max-w-7xl">
@@ -22,6 +27,29 @@ const Header: React.FC = () => {
           <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">
             Blueprint AI
           </h1>
+        </div>
+
+        <div className="flex items-center space-x-2 bg-slate-800 p-1 rounded-lg border border-slate-700">
+          <button
+            onClick={() => setMode('documentacao')}
+            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200 ${
+              mode === 'documentacao'
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-white hover:bg-slate-700'
+            }`}
+          >
+            Documentação
+          </button>
+          <button
+            onClick={() => setMode('analise')}
+            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200 ${
+              mode === 'analise'
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-white hover:bg-slate-700'
+            }`}
+          >
+            Análise
+          </button>
         </div>
       </div>
     </header>
