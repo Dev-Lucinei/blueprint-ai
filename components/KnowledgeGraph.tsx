@@ -84,6 +84,8 @@ const MIN_ZOOM = 0.1;
 const MAX_ZOOM = 5;
 const ZOOM_SPEED = 0.001;
 const DRAG_THRESHOLD = 5;
+const GRID_CELL_SIZE = 200;
+const MAX_FORCE_DIST = 400;
 
 function getNodeColor(type: string): string {
   return NODE_COLORS[type] || '#6b7280';
@@ -236,16 +238,44 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
     const sn = simNodesRef.current;
     if (sn.length === 0) return;
 
-    let maxVel = 0;
     const n = sn.length;
 
+    const grid = new Map<number, number[]>();
     for (let i = 0; i < n; i++) {
-      for (let j = i + 1; j < n; j++) {
+      const node = sn[i];
+      const cx = Math.floor(node.x / GRID_CELL_SIZE);
+      const cy = Math.floor(node.y / GRID_CELL_SIZE);
+      for (let dx = -1; dx <= 1; dx++) {
+        for (let dy = -1; dy <= 1; dy++) {
+          const key = (cx + dx) * 100000 + (cy + dy);
+          if (!grid.has(key)) grid.set(key, []);
+          grid.get(key)!.push(i);
+        }
+      }
+    }
+
+    const considered = new Uint8Array(n);
+    for (let i = 0; i < n; i++) {
+      considered[i] = 0;
+    }
+
+    for (let i = 0; i < n; i++) {
+      const node = sn[i];
+      const cx = Math.floor(node.x / GRID_CELL_SIZE);
+      const cy = Math.floor(node.y / GRID_CELL_SIZE);
+      const key = cx * 100000 + cy;
+      const cell = grid.get(key);
+      if (!cell) continue;
+
+      for (const j of cell) {
+        if (j <= i || considered[j]) continue;
         const a = sn[i];
         const b = sn[j];
         let dx = b.x - a.x;
         let dy = b.y - a.y;
-        let dist = Math.sqrt(dx * dx + dy * dy);
+        const distSq = dx * dx + dy * dy;
+        if (distSq > MAX_FORCE_DIST * MAX_FORCE_DIST) continue;
+        let dist = Math.sqrt(distSq);
         if (dist < 1) dist = 1;
         const force = COULOMB_CONSTANT / (dist * dist);
         const fx = (force * dx) / dist;
@@ -254,12 +284,20 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
         a.vy -= fy;
         b.vx += fx;
         b.vy += fy;
+        considered[j] = 1;
       }
     }
 
-    for (const link of simLinksRef.current) {
-      const source = sn.find(n => n.id === link.source);
-      const target = sn.find(n => n.id === link.target);
+    const sl = simLinksRef.current;
+    for (let li = 0; li < sl.length; li++) {
+      const link = sl[li];
+      let source: GraphNode | undefined;
+      let target: GraphNode | undefined;
+      for (let ni = 0; ni < n; ni++) {
+        const node = sn[ni];
+        if (node.id === link.source) source = node;
+        if (node.id === link.target) target = node;
+      }
       if (!source || !target) continue;
       let dx = target.x - source.x;
       let dy = target.y - source.y;
@@ -275,12 +313,15 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
       target.vy -= fy;
     }
 
-    for (const node of sn) {
+    let maxVel = 0;
+    for (let i = 0; i < n; i++) {
+      const node = sn[i];
       node.vx -= node.x * GRAVITY_CONSTANT;
       node.vy -= node.y * GRAVITY_CONSTANT;
     }
 
-    for (const node of sn) {
+    for (let i = 0; i < n; i++) {
+      const node = sn[i];
       node.vx *= DAMPING;
       node.vy *= DAMPING;
 
@@ -298,7 +339,7 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
       node.x += node.vx;
       node.y += node.vy;
 
-      const vel = Math.sqrt(node.vx * node.vx + node.vy * node.vy);
+      const vel = Math.abs(node.vx) + Math.abs(node.vy);
       if (vel > maxVel) maxVel = vel;
     }
 
