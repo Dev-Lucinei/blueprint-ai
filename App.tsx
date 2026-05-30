@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import mermaid from 'mermaid';
 import { Tab, FileObject, AIProvider, AIConfig, AppMode, getDefaultModel } from './types';
 import { getDocSystemInstruction, getRefinementSystemInstruction } from './services/geminiService';
 import { aiClient } from './services/aiProvider';
@@ -14,14 +15,6 @@ import ResultsTab from './components/tabs/ResultsTab';
 import AnalyzeTab from './components/AnalyzeTab';
 import Toast from './components/Toast';
 import ProjectVisualizerModal from './components/ProjectVisualizerModal';
-
-declare global {
-  interface Window {
-    marked: any;
-    DOMPurify: any;
-    mermaid: any;
-  }
-}
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>('projeto');
@@ -167,17 +160,15 @@ const App: React.FC = () => {
   }, [generatedMarkdown, showToast, aiProvider, aiModel]);
 
   useEffect(() => {
-    if (window.mermaid) {
-      window.mermaid.initialize({
-        startOnLoad: false,
-        theme: 'dark',
-        securityLevel: 'loose',
-        flowchart: {
-          useMaxWidth: true,
-          htmlLabels: true,
-        },
-      });
-    }
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'dark',
+      securityLevel: 'loose',
+      flowchart: {
+        useMaxWidth: true,
+        htmlLabels: true,
+      },
+    });
   }, []);
 
   return (

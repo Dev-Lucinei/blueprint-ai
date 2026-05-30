@@ -1,4 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { marked } from 'marked';
+import DOMPurify from 'dompurify';
+import mermaid from 'mermaid';
 import { GraphNode, GraphLink } from '../../types';
 import KnowledgeGraph from '../KnowledgeGraph';
 import GraphSidebar from '../GraphSidebar';
@@ -27,9 +30,8 @@ const ResultsTab: React.FC<ResultsTabProps> = ({ markdown, isLoading, projectNam
 
   useEffect(() => {
     if (activeView === 'rendered' && markdown && renderedContentRef.current) {
-        if (window.marked && window.DOMPurify) {
-            const rawHtml = window.marked.parse(markdown);
-            const cleanHtml = window.DOMPurify.sanitize(rawHtml, { ADD_ATTR: ['id'], ADD_TAGS: ['section'] });
+        const rawHtml = marked.parse(markdown) as string;
+        const cleanHtml = DOMPurify.sanitize(rawHtml, { ADD_ATTR: ['id'], ADD_TAGS: ['section'] });
             renderedContentRef.current.innerHTML = cleanHtml;
 
             const preElements = renderedContentRef.current.querySelectorAll('pre');
@@ -78,15 +80,12 @@ const ResultsTab: React.FC<ResultsTabProps> = ({ markdown, isLoading, projectNam
             });
             setToc(newToc);
 
-            if(window.mermaid) {
-                try {
-                    window.mermaid.run({ nodes: renderedContentRef.current.querySelectorAll('.mermaid') });
-                } catch(e) {
-                    console.error("Mermaid rendering error:", e);
-                }
+            try {
+                mermaid.run({ nodes: renderedContentRef.current.querySelectorAll('.mermaid') });
+            } catch(e) {
+                console.error("Mermaid rendering error:", e);
             }
         }
-    }
   }, [markdown, activeView, showToast]);
 
   useEffect(() => {
