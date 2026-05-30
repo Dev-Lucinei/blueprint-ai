@@ -2,6 +2,31 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import type { FileObject, AIConfig, PipelineState } from '../types';
 import { runPipeline, PIPELINE_STEPS } from '../services/pipelineService';
 
+const CACHE_PREFIX = 'pipeline_cache_';
+
+function buildCacheKey(projectDescription: string, files: FileObject[]): string {
+  const fileHash = files.map(f => `${f.file.name}:${f.content.length}`).join('|');
+  return `${CACHE_PREFIX}${projectDescription.length}_${files.length}_${fileHash}`;
+}
+
+function loadFromCache(key: string): PipelineState | null {
+  try {
+    const raw = sessionStorage.getItem(key);
+    if (!raw) return null;
+    return JSON.parse(raw) as PipelineState;
+  } catch {
+    return null;
+  }
+}
+
+function saveToCache(key: string, state: PipelineState): void {
+  try {
+    sessionStorage.setItem(key, JSON.stringify(state));
+  } catch {
+    // sessionStorage may be full or unavailable
+  }
+}
+
 export interface UsePipelineReturn {
   pipelineState: PipelineState | null;
   isRunning: boolean;
@@ -19,6 +44,7 @@ export function usePipeline(
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const onStepCompleteRef = useRef(onStepComplete);
+  const cacheKeyRef = useRef<string>('');
   onStepCompleteRef.current = onStepComplete;
 
   const stopPipeline = useCallback(() => {
@@ -38,6 +64,22 @@ export function usePipeline(
     config: AIConfig
   ): Promise<void> => {
     stopPipeline();
+
+    const key = buildCacheKey(projectDescription, files);
+    cacheKeyRef.current = key;
+
+    const cached = loadFromCache(key);
+    if (cached) {
+      setPipelineState(cached);
+      setError(null);
+      setIsRunning(false);
+      cached.results.forEach(r => {
+        if (r.status === 'done' && r.content) {
+          onStepCompleteRef.current?.(r.stepId, r.content);
+        }
+      });
+      return;
+    }
 
     const controller = new AbortController();
     abortRef.current = controller;
@@ -77,6 +119,9 @@ export function usePipeline(
 
       if (!controller.signal.aborted) {
         setPipelineState(result);
+        if (result.results.every(r => r.status === 'done')) {
+          saveToCache(key, result);
+        }
         const failedStep = result.results.find(r => r.status === 'error');
         if (failedStep) {
           setError(`Pipeline falhou na etapa "${failedStep.stepId}": ${failedStep.content}`);
