@@ -29,6 +29,7 @@ const Card: React.FC<{ children: React.ReactNode, title: string, description: st
 
 const ContentTab: React.FC<ContentTabProps> = ({ contextText, setContextText, files, setFiles, showToast }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dirInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = event.target.files;
@@ -39,7 +40,6 @@ const ContentTab: React.FC<ContentTabProps> = ({ contextText, setContextText, fi
       return;
     }
 
-    // Fix: Add explicit : File type annotation to 'file' parameter to fix type inference issue.
     const newFileObjects: FileObject[] = Array.from(selectedFiles).map((file: File) => ({
       file,
       content: '',
@@ -69,15 +69,19 @@ const ContentTab: React.FC<ContentTabProps> = ({ contextText, setContextText, fi
              setFiles(prev => prev.map((f, i) => i === fileIndex ? {...f, status: 'error'} : f));
         };
         
-        if (fileObject.file.type.startsWith('text/') || fileObject.file.name.endsWith('.md')) {
+        const supportedExtensions = ['.ts', '.tsx', '.js', '.jsx', '.py', '.json', '.md', '.css', '.html', '.txt'];
+        const isSupported = supportedExtensions.some(ext => fileObject.file.name.endsWith(ext)) || fileObject.file.type.startsWith('text/');
+        
+        if (isSupported) {
             reader.readAsText(fileObject.file);
         } else {
-            showToast(`Arquivo "${fileObject.file.name}" não é um formato de texto suportado.`, 'error');
-            setFiles(prev => prev.map((f, i) => i === fileIndex ? {...f, content: "Conteúdo não textual, não será incluído no prompt.", status: 'success'} : f));
+            showToast(`Arquivo "${fileObject.file.name}" não é um formato suportado.`, 'error');
+            setFiles(prev => prev.map((f, i) => i === fileIndex ? {...f, content: "Conteúdo não suportado, não será incluído no prompt.", status: 'success'} : f));
         }
     });
 
     if(fileInputRef.current) fileInputRef.current.value = "";
+    if(dirInputRef.current) dirInputRef.current.value = "";
   };
   
   const removeFile = (indexToRemove: number) => {
@@ -101,42 +105,63 @@ const ContentTab: React.FC<ContentTabProps> = ({ contextText, setContextText, fi
       
       <Card
         title="Anexar Arquivos"
-        description={`Envie até ${MAX_FILES} arquivos de suporte (.txt, .md). O conteúdo de texto será adicionado ao contexto.`}
+        description={`Envie até ${MAX_FILES} arquivos de suporte (.ts, .tsx, .js, .jsx, .py, .json, .md, .css, .html). O conteúdo de texto será adicionado ao contexto.`}
        >
-        <div className="flex items-center">
-            <input
-                type="file"
-                ref={fileInputRef}
-                className="hidden"
-                multiple
-                accept=".txt, .md"
-                onChange={handleFileChange}
-                disabled={files.length >= MAX_FILES}
-            />
-            <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={files.length >= MAX_FILES}
-                className="py-3 px-5 text-sm font-semibold text-white rounded-lg transition-all duration-300 ease-in-out bg-slate-600 hover:bg-slate-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-md flex items-center"
-            >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
-                Selecionar Arquivos
-            </button>
-            <span className="ml-4 text-sm text-slate-400">{files.length} / {MAX_FILES} arquivos selecionados</span>
-        </div>
+         <div className="flex flex-wrap gap-3 items-center">
+             <input
+                 type="file"
+                 ref={fileInputRef}
+                 className="hidden"
+                 multiple
+                 accept=".ts,.tsx,.js,.jsx,.py,.json,.md,.css,.html,.txt"
+                 onChange={handleFileChange}
+                 disabled={files.length >= MAX_FILES}
+             />
+             <button
+                 type="button"
+                 onClick={() => fileInputRef.current?.click()}
+                 disabled={files.length >= MAX_FILES}
+                 className="py-3 px-5 text-sm font-semibold text-white rounded-lg transition-all duration-300 ease-in-out bg-slate-600 hover:bg-slate-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-md flex items-center"
+             >
+                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+                 Selecionar Arquivos
+             </button>
 
-        <div className="mt-4 p-4 bg-slate-900/50 rounded-lg border border-slate-700 min-h-[100px] space-y-2">
-            {files.length === 0 ? (
-                 <p className="text-sm text-slate-500 text-center py-4">Nenhum arquivo anexado.</p>
-            ) : (
-                files.map((fileObj, index) => (
-                    <FileItem key={index} fileObject={fileObj} onRemove={() => removeFile(index)} />
-                ))
-            )}
-        </div>
-      </Card>
+             <input
+                 type="file"
+                 ref={dirInputRef}
+                 className="hidden"
+                 webkitdirectory=""
+                 directory=""
+                 multiple
+                 onChange={handleFileChange}
+                 disabled={files.length >= MAX_FILES}
+             />
+             <button
+                 type="button"
+                 onClick={() => dirInputRef.current?.click()}
+                 disabled={files.length >= MAX_FILES}
+                 className="py-3 px-5 text-sm font-semibold text-white rounded-lg transition-all duration-300 ease-in-out bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed shadow-md flex items-center"
+             >
+                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>
+                 Selecionar Pasta
+             </button>
+             <span className="ml-4 text-sm text-slate-400">{files.length} / {MAX_FILES} arquivos selecionados</span>
+         </div>
+ 
+         <div className="mt-4 p-4 bg-slate-900/50 rounded-lg border border-slate-700 min-h-[100px] space-y-2">
+             {files.length === 0 ? (
+                  <p className="text-sm text-slate-500 text-center py-4">Nenhum arquivo anexado.</p>
+             ) : (
+                 files.map((fileObj, index) => (
+                     <FileItem key={index} fileObject={fileObj} onRemove={() => removeFile(index)} />
+                 ))
+             )}
+         </div>
+       </Card>
     </div>
   );
 };
+
 
 export default ContentTab;
