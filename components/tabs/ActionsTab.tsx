@@ -8,6 +8,7 @@ interface ActionsTabProps {
   generatedMarkdown: string;
   isLoading: boolean;
   onOpenVisualizer: () => void;
+  onExportJSON: () => void;
   showToast: (message: string, type: 'success' | 'error' | 'info') => void;
 }
 
@@ -23,7 +24,7 @@ const Card: React.FC<{ children: React.ReactNode, title: string, description: st
     </div>
 );
 
-const ActionsTab: React.FC<ActionsTabProps> = ({ onRefine, isRefining, generatedMarkdown, isLoading, onOpenVisualizer, showToast }) => {
+const ActionsTab: React.FC<ActionsTabProps> = ({ onRefine, isRefining, generatedMarkdown, isLoading, onOpenVisualizer, onExportJSON, showToast }) => {
   const [refinementQuery, setRefinementQuery] = useState('');
   const hasContent = generatedMarkdown.length > 0;
 
@@ -86,20 +87,27 @@ const ActionsTab: React.FC<ActionsTabProps> = ({ onRefine, isRefining, generated
         description="Copie o conteúdo gerado ou visualize o plano de projeto."
         hidden={!hasContent || isLoading}
       >
-        <div className="flex flex-wrap gap-4">
-           <button
-            onClick={handleCopy}
-            className="py-3 px-6 font-semibold text-white rounded-lg transition-all duration-300 ease-in-out bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 shadow-md flex items-center"
-          >
-            Copiar Blueprint
-          </button>
-           <button
-            onClick={onOpenVisualizer}
-            className="py-3 px-6 font-semibold text-white rounded-lg transition-all duration-300 ease-in-out bg-slate-600 hover:bg-slate-500 shadow-md flex items-center"
-          >
-            Visualizar Projeto
-          </button>
-        </div>
+         <div className="flex flex-wrap gap-4">
+            <button
+             onClick={handleCopy}
+             className="py-3 px-6 font-semibold text-white rounded-lg transition-all duration-300 ease-in-out bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 shadow-md flex items-center"
+           >
+             Copiar Blueprint
+           </button>
+            <button
+             onClick={onOpenVisualizer}
+             className="py-3 px-6 font-semibold text-white rounded-lg transition-all duration-300 ease-in-out bg-slate-600 hover:bg-slate-500 shadow-md flex items-center"
+           >
+             Visualizar Projeto
+           </button>
+            <button
+             onClick={onExportJSON}
+             className="py-3 px-6 font-semibold text-white rounded-lg transition-all duration-300 ease-in-out bg-slate-700 hover:bg-slate-600 shadow-md flex items-center"
+           >
+             Exportar Bundle JSON
+           </button>
+         </div>
+
       </Card>
 
     </div>

@@ -132,25 +132,19 @@ const App: React.FC = () => {
       showToast('Por favor, descreva o ajuste que pretende aplicar.', 'error');
       return;
     }
-
     if (!isApiKeyConfigured(aiProvider)) {
       showToast(`API Key para ${aiProvider} não configurada. Verifique o .env.local`, 'error');
       return;
     }
-
     setIsRefining(true);
-
     try {
       const config: AIConfig = { provider: aiProvider, model: aiModel };
       const systemInstruction = getRefinementSystemInstruction(refinementQuery, generatedMarkdown);
-
       const response = await aiClient.generate(`Aplique o refinamento: ${refinementQuery}`, config, {
         systemInstruction,
       });
-
       setGeneratedMarkdown(response.text.trim());
       showToast('Refinamento aplicado com sucesso!', 'success');
-
     } catch (error) {
       console.error('Erro ao refinar documentação:', error);
       showToast('Erro ao refinar documentação.', 'error');
@@ -158,6 +152,36 @@ const App: React.FC = () => {
       setIsRefining(false);
     }
   }, [generatedMarkdown, showToast, aiProvider, aiModel]);
+
+  const handleExportJSON = useCallback(() => {
+    const bundle = {
+      project: {
+        name: projectName,
+        deadline: projectDeadline,
+        description: projectDescription,
+      },
+      context: {
+        additionalText: contextText,
+        files: files.map(f => ({ name: f.file.name, content: f.content })),
+      },
+      aiConfig: {
+        provider: aiProvider,
+        model: aiModel,
+      },
+      blueprint: generatedMarkdown,
+      graph: graphData,
+    };
+
+    const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${projectName || 'blueprint-ai'}-bundle.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Bundle JSON exportado com sucesso!', 'success');
+  }, [projectName, projectDeadline, projectDescription, contextText, files, aiProvider, aiModel, generatedMarkdown, graphData, showToast]);
+
 
   useEffect(() => {
     mermaid.initialize({
@@ -205,16 +229,18 @@ const App: React.FC = () => {
             showToast={showToast}
           />
         </div>
-        <div className={activeTab === 'acoes' ? '' : 'hidden'}>
-          <ActionsTab
-            onRefine={handleRefine}
-            isRefining={isRefining}
-            generatedMarkdown={generatedMarkdown}
-            isLoading={isLoading}
-            onOpenVisualizer={() => setIsModalOpen(true)}
-            showToast={showToast}
-          />
-        </div>
+         <div className={activeTab === 'acoes' ? '' : 'hidden'}>
+           <ActionsTab
+             onRefine={handleRefine}
+             isRefining={isRefining}
+             generatedMarkdown={generatedMarkdown}
+             isLoading={isLoading}
+             onOpenVisualizer={() => setIsModalOpen(true)}
+             onExportJSON={handleExportJSON}
+             showToast={showToast}
+           />
+         </div>
+
         <div className={activeTab === 'resultados' ? '' : 'hidden'}>
           <ResultsTab
             markdown={generatedMarkdown}
