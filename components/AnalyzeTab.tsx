@@ -6,6 +6,23 @@ import type { UsePipelineReturn } from '../hooks/usePipeline';
 import { PIPELINE_STEPS } from '../services/pipelineService';
 import PipelineProgress from './PipelineProgress';
 
+function SkeletonBar({ className = '' }: { className?: string }) {
+  return (
+    <div className={`animate-pulse bg-slate-700/50 rounded ${className}`} />
+  );
+}
+
+function SkeletonCard() {
+  return (
+    <div className="bg-slate-800 rounded-xl border border-slate-700/50 p-4 space-y-3">
+      <SkeletonBar className="h-4 w-24" />
+      <SkeletonBar className="h-3 w-full" />
+      <SkeletonBar className="h-3 w-3/4" />
+      <SkeletonBar className="h-3 w-1/2" />
+    </div>
+  );
+}
+
 interface AnalyzeTabProps {
   pipeline: UsePipelineReturn;
   projectDescription: string;
@@ -32,6 +49,9 @@ const AnalyzeTab: React.FC<AnalyzeTabProps> = ({ pipeline, projectDescription, f
     };
   });
 
+  const hasDoneResults = pipelineState?.results.some(r => r.status === 'done');
+  const hasAnyRunning = pipelineState?.results.some(r => r.status === 'running');
+
   return (
     <div className="space-y-6 max-w-3xl mx-auto py-6">
       <div className="bg-slate-900 rounded-2xl border border-slate-700 p-6 space-y-4">
@@ -40,7 +60,23 @@ const AnalyzeTab: React.FC<AnalyzeTabProps> = ({ pipeline, projectDescription, f
           O pipeline executa 4 etapas sequenciais para analisar o código-fonte e extrair conhecimento do projeto.
         </p>
 
-        <PipelineProgress steps={steps} />
+        {isRunning && !hasDoneResults ? (
+          <div className="space-y-3 animate-fade-in">
+            <div className="flex items-center justify-between gap-2">
+              {PIPELINE_STEPS.map((step, i) => (
+                <React.Fragment key={step.id}>
+                  <div className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-700/50 min-w-[120px] flex-1">
+                    <SkeletonBar className="w-7 h-7 rounded-full" />
+                    <SkeletonBar className="h-3 w-16" />
+                  </div>
+                  {i < PIPELINE_STEPS.length - 1 && <SkeletonBar className="h-0.5 flex-1" />}
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <PipelineProgress steps={steps} />
+        )}
 
         {error && (
           <div className="bg-red-900/30 border border-red-700/50 rounded-lg px-4 py-3 text-sm text-red-300">
@@ -82,7 +118,17 @@ const AnalyzeTab: React.FC<AnalyzeTabProps> = ({ pipeline, projectDescription, f
         </div>
       </div>
 
-      {pipelineState && pipelineState.results.some(r => r.status === 'done') && (
+      {isRunning && hasAnyRunning && !hasDoneResults && (
+        <div className="bg-slate-900 rounded-2xl border border-slate-700 p-6 space-y-4 animate-fade-in">
+          <h3 className="text-md font-semibold text-white">Processando...</h3>
+          <div className="space-y-3">
+            <SkeletonCard />
+            <SkeletonCard />
+          </div>
+        </div>
+      )}
+
+      {hasDoneResults && (
         <div className="bg-slate-900 rounded-2xl border border-slate-700 p-6 space-y-4">
           <h3 className="text-md font-semibold text-white">Resultados Parciais</h3>
           <div className="space-y-3">
