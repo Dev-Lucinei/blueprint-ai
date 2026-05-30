@@ -82,15 +82,33 @@ export async function runPipeline(
   return state;
 }
 
-export function parseGraphFromAnalysis(analysis: string): { nodes: GraphNode[]; links: GraphLink[] } {
+export function parseGraphFromAI(analysis: string): { nodes: GraphNode[]; links: GraphLink[] } {
   try {
-    const jsonMatch = analysis.match(/\{[\s\S]*"nodes"[\s\S]*"links"[\s\S]*\}/);
-    if (!jsonMatch) return { nodes: [], links: [] };
-    const parsed = JSON.parse(jsonMatch[0]);
-    return {
-      nodes: Array.isArray(parsed.nodes) ? parsed.nodes : [],
-      links: Array.isArray(parsed.links) ? parsed.links : [],
-    };
+    const jsonMatch = analysis.match(/```(?:json)?\s*\n?(\{[\s\S]*?"nodes"[\s\S]*?"links"[\s\S]*?\})\s*\n?```/);
+    const jsonStr = jsonMatch?.[1] || analysis.match(/\{[\s\S]*?"nodes"[\s\S]*?"links"[\s\S]*?\}/)?.[0];
+    if (!jsonStr) return { nodes: [], links: [] };
+
+    const parsed = JSON.parse(jsonStr);
+    const nodes: GraphNode[] = Array.isArray(parsed.nodes) ? parsed.nodes.map((n: Partial<GraphNode>) => ({
+      id: n.id || '',
+      label: n.label || n.id || '',
+      type: n.type || 'file',
+      x: n.x || 0,
+      y: n.y || 0,
+      vx: n.vx || 0,
+      vy: n.vy || 0,
+      size: n.size || 8,
+    })) : [];
+
+    const links: GraphLink[] = Array.isArray(parsed.links) ? parsed.links
+      .filter((l: Partial<GraphLink>) => l.source && l.target)
+      .map((l: Partial<GraphLink>) => ({
+        source: l.source || '',
+        target: l.target || '',
+        type: l.type || 'dependency',
+      })) : [];
+
+    return { nodes, links };
   } catch {
     return { nodes: [], links: [] };
   }
