@@ -64,17 +64,25 @@ const generateWithGemini = async (
   if (!apiKey) throw new Error('GEMINI_API_KEY não configurada');
 
   return withRetry(async () => {
-    const ai = new GoogleGenAI({ apiKey });
-    const response = await ai.models.generateContent({
-      model: config.model,
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      config: {
-        systemInstruction: options?.systemInstruction,
-        temperature: options?.temperature,
-        maxOutputTokens: options?.maxTokens,
-      },
-    });
-    return { text: response.text ?? '' };
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Gemini request timed out after 60s')), 60000)
+    );
+
+    const requestPromise = (async () => {
+      const ai = new GoogleGenAI({ apiKey });
+      const response = await ai.models.generateContent({
+        model: config.model,
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        config: {
+          systemInstruction: options?.systemInstruction,
+          temperature: options?.temperature,
+          maxOutputTokens: options?.maxTokens,
+        },
+      });
+      return { text: response.text ?? '' };
+    })();
+
+    return Promise.race([requestPromise, timeoutPromise]);
   }, 5, 2000);
 };
 
