@@ -1,0 +1,1 @@
+/home/lucinei/Projetos/blueprint-ai/docs/specs/tasks.md

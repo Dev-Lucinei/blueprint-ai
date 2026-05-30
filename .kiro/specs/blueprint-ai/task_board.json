@@ -1,0 +1,338 @@
+{
+  "project_id": "blueprint-ai",
+  "last_update": "2026-05-30T00:30:00Z",
+  "tasks": [
+    {
+      "id": "T-001",
+      "title": "Adicionar lucide-react ao package.json e instalar",
+      "assigned_agent": "",
+      "priority": "M",
+      "dependencies": [],
+      "status": "completed",
+      "input_data": "",
+      "output_log": "lucide-react ^0.468.0 adicionado ao package.json",
+      "result_path": "package.json"
+    },
+    {
+      "id": "T-002",
+      "title": "Estender types.ts com interfaces AnalysisStep, PipelineState, GraphNode, GraphLink, ExtractedContext",
+      "assigned_agent": "",
+      "priority": "M",
+      "dependencies": [],
+      "status": "completed",
+      "input_data": "",
+      "output_log": "Interfaces AnalysisStep, PipelineState, GraphNode, GraphLink, ExtractedContext criadas em types.ts",
+      "result_path": "types.ts"
+    },
+    {
+      "id": "T-003",
+      "title": "Criar services/pipelineService.ts com orquestrador de pipeline multi-agente usando aiProvider.ts",
+      "assigned_agent": "",
+      "priority": "M",
+      "dependencies": [
+        "T-002"
+      ],
+      "status": "completed",
+      "input_data": "",
+      "output_log": "pipelineService.ts criado com runPipeline() e parseGraphFromAnalysis()",
+      "result_path": "services/pipelineService.ts"
+    },
+    {
+      "id": "T-004",
+      "title": "Adicionar system prompts para Scout, Archaeologist, Architect, Cartographer em services/geminiService.ts",
+      "assigned_agent": "",
+      "priority": "M",
+      "dependencies": [
+        "T-003"
+      ],
+      "status": "completed",
+      "input_data": "",
+      "output_log": "System prompts para 4 agentes adicionados ao geminiService.ts",
+      "result_path": "services/geminiService.ts"
+    },
+    {
+      "id": "T-005",
+      "title": "Adicionar retry logic com exponential backoff no aiProvider.ts",
+      "assigned_agent": "",
+      "priority": "M",
+      "dependencies": [],
+      "status": "completed",
+      "input_data": "",
+      "output_log": "Retry logic com maxRetries=5 e exponential backoff implementado em aiProvider.ts",
+      "result_path": "services/aiProvider.ts"
+    },
+    {
+      "id": "T-006",
+      "title": "Criar components/PipelineProgress.tsx com barra de 4 etapas e status",
+      "assigned_agent": "",
+      "priority": "M",
+      "dependencies": [
+        "T-003"
+      ],
+      "status": "completed",
+      "input_data": "Requisito RF-003: Pipeline multi-agente em 4 etapas (Scout, Archaeologist, Architect, Cartographer). Refer\u00eancia: design.md secao 3, types.ts PipelineState",
+      "output_log": "completed",
+      "result_path": "PipelineProgress.tsx criado: componente puro com props steps, exibe 4 etapas em horizontal (desktop) / vertical (mobile) com icones lucide-react (CheckCircle/Loader2/XCircle/Circle), status colors (verde/azul/vermelho/cinza), conectores entre etapas, animacao spinner para running, transicoes CSS, aria-labels. Build passou sem erros.",
+      "last_update": "2026-05-29T23:27:18.410568+00:00"
+    },
+    {
+      "id": "T-007",
+      "title": "Adicionar aba 'Analisar' ao App, DesktopTabs, MobileTabs",
+      "assigned_agent": "",
+      "priority": "M",
+      "dependencies": [
+        "T-006"
+      ],
+      "status": "completed",
+      "input_data": "RF-002: Dois modos de geracao: 'Documentacao' e 'Analise'. Adicionar PipelineTab com PipelineProgress + PipelineLog conforme design.md Nivel 3",
+      "output_log": "completed",
+      "result_path": "Adicionado modo Analisar:\\n- types.ts: Tab inclui 'analisar', novo tipo AppMode\\n- Header.tsx: toggle Documenta\u00e7\u00e3o/An\u00e1lise\\n- DesktopTabs.tsx + MobileTabs.tsx: abas condicionais por modo\\n- Icons.tsx: AnaliseIcon\\n- AnalyzeTab.tsx: PipelineProgress + log resultados + Iniciar/Parar\\n- App.tsx: estado appMode, renderiza AnalyzeTab\\nBuild passou sem erros.",
+      "last_update": "2026-05-29T23:30:54.035368+00:00"
+    },
+    {
+      "id": "T-008",
+      "title": "Implementar usePipeline hook em App.tsx (estado do pipeline, execucao, resultados acumulados)",
+      "assigned_agent": "",
+      "priority": "M",
+      "dependencies": [
+        "T-003",
+        "T-005"
+      ],
+      "status": "completed",
+      "input_data": "RF-003: Executar pipeline multi-agente. Integrar pipelineService.runPipeline() com estado do App. PipelineState definido em types.ts",
+      "output_log": "completed",
+      "result_path": "usePipeline hook criado em hooks/usePipeline.ts: useState/PipelineState, useCallback/startPipeline+stopPipeline+resetPipeline, useRef/AbortController, useEffect cleanup no unmount, onStepComplete com ref p/ evitar stale closure, tratamento de erro preservando resultados parciais (RE-002). PIPELINE_STEPS exportado de pipelineService.ts p/ inicializa\u00e7\u00e3o sem hardcode. Integrado em App.tsx sem quebrar handleGenerate existente.",
+      "last_update": "2026-05-29T23:27:49.167065+00:00"
+    },
+    {
+      "id": "T-009",
+      "title": "Conectar resultados do pipeline ao fluxo de geracao do blueprint (contexto enriquecido)",
+      "assigned_agent": "",
+      "priority": "M",
+      "dependencies": [
+        "T-008"
+      ],
+      "status": "completed",
+      "input_data": "RF-005: Gerar blueprint Markdown com contexto enriquecido do pipeline. Usar accumulatedContext como input do gerador de blueprint",
+      "output_log": "completed",
+      "result_path": "Pipeline accumulatedContext conectado ao fluxo de geracao do blueprint. handleGenerate em App.tsx agora verifica appMode==='analise' e injeta accumulatedContext como '## Contexto Adicional da Analise de Codigo' no prompt. Modo documentacao permanece inalterado. Build verificado com sucesso.",
+      "last_update": "2026-05-29T23:31:59.727364+00:00"
+    },
+    {
+      "id": "T-010",
+      "title": "Criar components/KnowledgeGraph.tsx (Canvas, simulacao fisica, pan/zoom)",
+      "assigned_agent": "",
+      "priority": "M",
+      "dependencies": [
+        "T-002"
+      ],
+      "status": "completed",
+      "input_data": "RF-004, design.md secao 3: Grafo interativo com Canvas API",
+      "output_log": "completed",
+      "result_path": "KnowledgeGraph.tsx criado completo com simulacao fisica, pan/zoom, drag, selecao, hover, cores por tipo, responsividade, fallbacks. Build limpo.",
+      "last_update": "2026-05-29T23:28:58.096341+00:00"
+    },
+    {
+      "id": "T-011",
+      "title": "Criar components/GraphSidebar.tsx com detalhes do no selecionado e legenda",
+      "assigned_agent": "",
+      "priority": "M",
+      "dependencies": ["T-010"],
+      "status": "completed",
+      "input_data": "RF-009: GraphSidebar com detalhes do no selecionado e legenda. Referencia: tasks.md Fase 3",
+      "output_log": "GraphSidebar.tsx criado: exibe legenda com cores por tipo, detalhes do no selecionado (ID, label, tipo, tamanho), contagem total de nos/links, fallback quando nenhum no selecionado",
+      "result_path": "components/GraphSidebar.tsx"
+    },
+    {
+      "id": "T-012",
+      "title": "Criar components/KnowledgeGraphControls.tsx (ZoomIn/Out, centralizar, reset, fullscreen)",
+      "assigned_agent": "",
+      "priority": "M",
+      "dependencies": ["T-010"],
+      "status": "completed",
+      "input_data": "RF-004: Controles de zoom, centralizar, reset, fullscreen para o grafo",
+      "output_log": "KnowledgeGraphControls.tsx criado com botoes para zoom in/out, centralizar, reset, fullscreen",
+      "result_path": "components/KnowledgeGraphControls.tsx"
+    },
+    {
+      "id": "T-013",
+      "title": "Implementar parseGraphFromAI() no pipeline para extrair JSON de nos/links",
+      "assigned_agent": "",
+      "priority": "M",
+      "dependencies": ["T-003", "T-010"],
+      "status": "completed",
+      "input_data": "RF-004: parseGraphFromAI() no pipelineService para extrair nos/links da resposta do Cartographer",
+      "output_log": "parseGraphFromAI() implementado em pipelineService.ts com suporte a code block JSON, normalizacao de nos/links, validacao de campos obrigatorios",
+      "result_path": "services/pipelineService.ts"
+    },
+    {
+      "id": "T-014",
+      "title": "Integrar grafo como sub-aba em ResultsTab",
+      "assigned_agent": "",
+      "priority": "M",
+      "dependencies": ["T-010", "T-013"],
+      "status": "completed",
+      "input_data": "RF-004: Grafo como sub-aba nos resultados",
+      "output_log": "ResultsTab atualizado com view 'graph', controles integrados, graphData derivado do pipeline state via useMemo",
+      "result_path": "components/tabs/ResultsTab.tsx"
+    },
+    {
+      "id": "T-015",
+      "title": "Adicionar fallback mobile para grafo (lista estatica de nos quando touch)",
+      "assigned_agent": "",
+      "priority": "M",
+      "dependencies": ["T-010"],
+      "status": "completed",
+      "input_data": "RP-001: Fallback mobile para grafo - lista estatica quando touch device",
+      "output_log": "MobileFallback component adicionado ao KnowledgeGraph: lista estatica com botoes de selecao, expansao de conexoes, cores por tipo. Canvas substituido por fallback em touch devices",
+      "result_path": "components/KnowledgeGraph.tsx"
+    },
+    {
+      "id": "T-016",
+      "title": "Remover API key hardcoded do webapp.tsx legado",
+      "assigned_agent": "",
+      "priority": "M",
+      "dependencies": [],
+      "status": "completed",
+      "input_data": "RS-001: API key hardcoded removida do webapp.tsx (agora string vazia)",
+      "output_log": "completed",
+      "result_path": "webapp.tsx"
+    },
+    {
+      "id": "T-017",
+      "title": "Adicionar validação de API key configurada antes de chamadas no pipeline",
+      "assigned_agent": "",
+      "priority": "M",
+      "dependencies": ["T-003"],
+      "status": "completed",
+      "input_data": "RS-003: isApiKeyConfigured() em App.tsx + validação em aiProvider.ts",
+      "output_log": "completed",
+      "result_path": "App.tsx, services/aiProvider.ts"
+    },
+    {
+      "id": "T-018",
+      "title": "Implementar interrupção do pipeline com preservação de resultados parciais em caso de erro",
+      "assigned_agent": "",
+      "priority": "M",
+      "dependencies": ["T-008"],
+      "status": "completed",
+      "input_data": "RE-002: stopPipeline via AbortController em usePipeline.ts, erros preservam pipelineState",
+      "output_log": "completed",
+      "result_path": "hooks/usePipeline.ts"
+    },
+    {
+      "id": "T-019",
+      "title": "Adicionar toast de erro específico para upload >5MB e formato inválido",
+      "assigned_agent": "",
+      "priority": "M",
+      "dependencies": [],
+      "status": "completed",
+      "input_data": "RE-003: Toast para arquivos >5MB e formato não textual em ContentTab.tsx",
+      "output_log": "completed",
+      "result_path": "components/tabs/ContentTab.tsx"
+    },
+    {
+      "id": "T-020",
+      "title": "Adicionar mensagem informativa para grafo vazio (0 nós)",
+      "assigned_agent": "",
+      "priority": "M",
+      "dependencies": ["T-013"],
+      "status": "completed",
+      "input_data": "RE-004: Empty state com ícone e mensagem em KnowledgeGraph.tsx quando nodes.length === 0",
+      "output_log": "completed",
+      "result_path": "components/KnowledgeGraph.tsx"
+    },
+    {
+      "id": "T-021",
+      "title": "Verificar npm run build sem erros",
+      "assigned_agent": "",
+      "priority": "M",
+      "dependencies": ["T-001", "T-002", "T-003", "T-004", "T-005", "T-006", "T-007", "T-008", "T-009", "T-010", "T-011", "T-012", "T-013", "T-014", "T-015", "T-016", "T-017", "T-018", "T-019", "T-020"],
+      "status": "completed",
+      "input_data": "RT-001: npm run build executado sem erros de tipo ou sintaxe",
+      "output_log": "completed",
+      "result_path": "build"
+    },
+    {
+      "id": "T-022",
+      "title": "Criar fixture de arquivos de teste para pipeline",
+      "assigned_agent": "",
+      "priority": "M",
+      "dependencies": ["T-003"],
+      "status": "completed",
+      "input_data": "RT-002: Fixtures criadas em fixtures/ com sample-app.ts, sample-component.tsx, sample-api.py, sample-config.json, sample-docs.md",
+      "output_log": "completed",
+      "result_path": "fixtures/"
+    },
+    {
+      "id": "T-023",
+      "title": "Validar formato de saída do Cartographer contra schema esperado",
+      "assigned_agent": "",
+      "priority": "M",
+      "dependencies": ["T-013", "T-022"],
+      "status": "completed",
+      "input_data": "RT-002: graphValidator.ts criado com validateGraphData() — valida nodes[].{id,label,type} e links[].{source,target,type}",
+      "output_log": "completed",
+      "result_path": "services/graphValidator.ts"
+    },
+    {
+      "id": "T-024",
+      "title": "Remover webapp.tsx (código obsoleto do bundle)",
+      "assigned_agent": "",
+      "priority": "M",
+      "dependencies": ["T-016"],
+      "status": "completed",
+      "input_data": "webapp.tsx não era importado por nenhum módulo do app. Removido com segurança.",
+      "output_log": "completed",
+      "result_path": "webapp.tsx (deleted)"
+    },
+    {
+      "id": "T-025",
+      "title": "Adicionar cache (sessionStorage) dos resultados do pipeline",
+      "assigned_agent": "",
+      "priority": "M",
+      "dependencies": ["T-008"],
+      "status": "completed",
+      "input_data": "RP-003: sessionStorage cache para resultados do pipeline",
+      "output_log": "usePipeline.ts com cacheKey baseado em projectDescription+files, loadFromCache/saveToCache via sessionStorage, retorno imediato se cache hit, onStepComplete replay para steps em cache. Build ok.",
+      "result_path": "hooks/usePipeline.ts",
+      "last_update": "2026-05-30T00:00:00Z"
+    },
+    {
+      "id": "T-026",
+      "title": "Otimizar simulacao fisica para 60 FPS com 30+ nos",
+      "assigned_agent": "",
+      "priority": "M",
+      "dependencies": ["T-010"],
+      "status": "completed",
+      "input_data": "RP-001: Otimizacao da simulacao fisica do grafo para >30 nos a 60 FPS",
+      "output_log": "KnowledgeGraph.tsx com spatial grid partitioning (GRID_CELL_SIZE=200, MAX_FORCE_DIST=400) para reduzir complexidade de O(n^2) para O(n*k). Coulomb forces calculadas apenas entre nos na mesma celula ou adjacentes. Link iteracao direta com find inline. Build ok.",
+      "result_path": "components/KnowledgeGraph.tsx",
+      "last_update": "2026-05-30T00:00:00Z"
+    },
+    {
+      "id": "T-027",
+      "title": "Adicionar loading skeleton na UI do pipeline",
+      "assigned_agent": "",
+      "priority": "M",
+      "dependencies": ["T-006"],
+      "status": "completed",
+      "input_data": "RF-003: Loading skeleton para PipelineProgress",
+      "output_log": "AnalyzeTab.tsx com SkeletonBar/SkeletonCard components, skeleton substitui PipelineProgress quando isRunning && !hasDoneResults, skeleton cards na area de resultados parciais durante execucao. Build ok.",
+      "result_path": "components/AnalyzeTab.tsx",
+      "last_update": "2026-05-30T00:00:00Z"
+    },
+    {
+      "id": "T-028",
+      "title": "Remover dependencias CDN (marked, DOMPurify, mermaid) — bundle local via npm",
+      "assigned_agent": "",
+      "priority": "M",
+      "dependencies": [],
+      "status": "completed",
+      "input_data": "Remover CDN marked, DOMPurify, mermaid do index.html e instalar via npm",
+      "output_log": "marked@18.0.4, dompurify@3.4.7, mermaid@11.15.0 instalados via npm. CDN scripts removidos do index.html. ResultsTab.tsx agora importa {marked}, DOMPurify, mermaid diretamente. App.tsx importa mermaid e remove declare global window. Build ok.",
+      "result_path": "index.html, package.json, components/tabs/ResultsTab.tsx, App.tsx",
+      "last_update": "2026-05-30T00:00:00Z"
+    }
+  ]
+}
