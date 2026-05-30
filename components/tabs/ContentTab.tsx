@@ -72,7 +72,8 @@ const ContentTab: React.FC<ContentTabProps> = ({ contextText, setContextText, fi
         if (fileObject.file.type.startsWith('text/') || fileObject.file.name.endsWith('.md')) {
             reader.readAsText(fileObject.file);
         } else {
-             setFiles(prev => prev.map((f, i) => i === fileIndex ? {...f, content: "Conteúdo não textual, não será incluído no prompt.", status: 'success'} : f));
+            showToast(`Arquivo "${fileObject.file.name}" não é um formato de texto suportado.`, 'error');
+            setFiles(prev => prev.map((f, i) => i === fileIndex ? {...f, content: "Conteúdo não textual, não será incluído no prompt.", status: 'success'} : f));
         }
     });
 
