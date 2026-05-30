@@ -1,8 +1,9 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { Tab, FileObject, AIProvider, AIConfig, AppMode, getDefaultModel } from './types';
 import { getDocSystemInstruction, getRefinementSystemInstruction } from './services/geminiService';
 import { aiClient } from './services/aiProvider';
 import { usePipeline } from './hooks/usePipeline';
+import { parseGraphFromAI } from './services/pipelineService';
 import Header from './components/Header';
 import DesktopTabs from './components/DesktopTabs';
 import MobileTabs from './components/MobileTabs';
@@ -45,6 +46,13 @@ const App: React.FC = () => {
     console.log(`Pipeline step ${stepId} completed`);
   });
   const { pipelineState } = pipeline;
+
+  const graphData = useMemo(() => {
+    if (!pipelineState) return { nodes: [], links: [] };
+    const cartographerResult = pipelineState.results.find(r => r.stepId === 'cartographer');
+    if (!cartographerResult || cartographerResult.status !== 'done') return { nodes: [], links: [] };
+    return parseGraphFromAI(cartographerResult.content);
+  }, [pipelineState]);
 
   useEffect(() => {
     const defaults: Record<AIProvider, string> = {
@@ -222,6 +230,8 @@ const App: React.FC = () => {
             isLoading={isLoading}
             projectName={projectName}
             showToast={showToast}
+            graphNodes={graphData.nodes}
+            graphLinks={graphData.links}
           />
         </div>
         <div className={activeTab === 'analisar' ? '' : 'hidden'}>

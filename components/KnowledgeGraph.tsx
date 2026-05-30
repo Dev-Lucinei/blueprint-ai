@@ -1,6 +1,61 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { GraphNode, GraphLink } from '../types';
 
+function MobileFallback({ nodes, links, onNodeSelect, selectedNodeId }: {
+  nodes: GraphNode[];
+  links: GraphLink[];
+  onNodeSelect?: (node: GraphNode | null) => void;
+  selectedNodeId?: string | null;
+}) {
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  return (
+    <div className="w-full h-full min-h-[400px] bg-gray-900 rounded-lg border border-gray-700 overflow-y-auto p-4">
+      <p className="text-xs text-gray-400 mb-3">
+        {nodes.length} nós · {links.length} conexões
+      </p>
+      <div className="space-y-1">
+        {nodes.map(node => {
+          const isSelected = selectedNodeId === node.id;
+          const isExpanded = expanded === node.id;
+          const connectedLinks = links.filter(l => l.source === node.id || l.target === node.id);
+          return (
+            <div key={node.id}>
+              <button
+                onClick={() => {
+                  onNodeSelect?.(isSelected ? null : node);
+                  setExpanded(isExpanded ? null : node.id);
+                }}
+                className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors flex items-center gap-2 ${
+                  isSelected ? 'bg-gray-700 text-white' : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
+                }`}
+              >
+                <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: getNodeColor(node.type) }} />
+                <span className="flex-1 truncate">{node.label || node.id}</span>
+                <span className="text-[10px] text-gray-500 uppercase">{node.type}</span>
+              </button>
+              {isExpanded && connectedLinks.length > 0 && (
+                <div className="ml-6 mt-1 mb-2 space-y-0.5">
+                  <p className="text-[10px] text-gray-500 uppercase">Conexões</p>
+                  {connectedLinks.map((link, i) => (
+                    <div key={i} className="text-xs text-gray-400 flex items-center gap-1">
+                      <svg className="w-3 h-3 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                      </svg>
+                      <span>{link.source === node.id ? link.target : link.source}</span>
+                      <span className="text-[10px] text-gray-600">({link.type})</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 interface KnowledgeGraphProps {
   nodes: GraphNode[];
   links: GraphLink[];
@@ -475,6 +530,17 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
     );
   }
 
+  if (nodes.length > 0 && isTouchDevice()) {
+    return (
+      <MobileFallback
+        nodes={nodes}
+        links={links}
+        onNodeSelect={onNodeSelect}
+        selectedNodeId={selectedNodeId}
+      />
+    );
+  }
+
   return (
     <div
       ref={containerRef}
@@ -500,12 +566,6 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseLeave}
         />
-      )}
-
-      {nodes.length > 0 && isTouchDevice() && (
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-black/60 rounded-full text-xs text-gray-300 pointer-events-none select-none">
-          Arraste para navegar
-        </div>
       )}
 
       {nodes.length > 0 && (

@@ -1,18 +1,29 @@
-
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { GraphNode, GraphLink } from '../../types';
+import KnowledgeGraph from '../KnowledgeGraph';
+import GraphSidebar from '../GraphSidebar';
+import KnowledgeGraphControls from '../KnowledgeGraphControls';
 
 interface ResultsTabProps {
   markdown: string;
   isLoading: boolean;
   projectName: string;
   showToast: (message: string, type: 'success' | 'error' | 'info') => void;
+  graphNodes?: GraphNode[];
+  graphLinks?: GraphLink[];
 }
 
-const ResultsTab: React.FC<ResultsTabProps> = ({ markdown, isLoading, projectName, showToast }) => {
-  const [activeView, setActiveView] = useState<'rendered' | 'raw'>('rendered');
+type ViewMode = 'rendered' | 'raw' | 'graph';
+
+const ResultsTab: React.FC<ResultsTabProps> = ({ markdown, isLoading, projectName, showToast, graphNodes = [], graphLinks = [] }) => {
+  const [activeView, setActiveView] = useState<ViewMode>('rendered');
   const renderedContentRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const [toc, setToc] = useState<{ id: string; text: string; level: number }[]>([]);
+  const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
+  const graphContainerRef = useRef<HTMLDivElement>(null);
+
+  const hasGraph = graphNodes.length > 0;
 
   useEffect(() => {
     if (activeView === 'rendered' && markdown && renderedContentRef.current) {
@@ -20,8 +31,7 @@ const ResultsTab: React.FC<ResultsTabProps> = ({ markdown, isLoading, projectNam
             const rawHtml = window.marked.parse(markdown);
             const cleanHtml = window.DOMPurify.sanitize(rawHtml, { ADD_ATTR: ['id'], ADD_TAGS: ['section'] });
             renderedContentRef.current.innerHTML = cleanHtml;
-            
-            // Enhance Code Blocks
+
             const preElements = renderedContentRef.current.querySelectorAll('pre');
             preElements.forEach(pre => {
                 const code = pre.querySelector('code');
@@ -46,16 +56,15 @@ const ResultsTab: React.FC<ResultsTabProps> = ({ markdown, isLoading, projectNam
                         showToast('Code copied to clipboard!', 'success');
                     }
                 };
-                
+
                 header.appendChild(langSpan);
                 header.appendChild(copyBtn);
-                
+
                 pre.parentNode?.insertBefore(wrapper, pre);
                 wrapper.appendChild(header);
                 wrapper.appendChild(pre);
             });
 
-            // Generate TOC
             const headings = renderedContentRef.current.querySelectorAll('h1, h2, h3');
             const newToc: { id: string; text: string; level: number }[] = [];
             headings.forEach((h, i) => {
@@ -69,7 +78,6 @@ const ResultsTab: React.FC<ResultsTabProps> = ({ markdown, isLoading, projectNam
             });
             setToc(newToc);
 
-            // Render Mermaid diagrams
             if(window.mermaid) {
                 try {
                     window.mermaid.run({ nodes: renderedContentRef.current.querySelectorAll('.mermaid') });
@@ -80,13 +88,12 @@ const ResultsTab: React.FC<ResultsTabProps> = ({ markdown, isLoading, projectNam
         }
     }
   }, [markdown, activeView, showToast]);
-  
-  // Effect for Active TOC Link on Scroll
+
   useEffect(() => {
     if (toc.length === 0 || activeView !== 'rendered') {
       return;
     }
-    
+
     if (observerRef.current) {
         observerRef.current.disconnect();
     }
@@ -95,10 +102,10 @@ const ResultsTab: React.FC<ResultsTabProps> = ({ markdown, isLoading, projectNam
         entries => {
             const intersectingEntries = entries.filter(e => e.isIntersecting);
             if (intersectingEntries.length > 0) {
-                const topEntry = intersectingEntries.reduce((prev, current) => 
+                const topEntry = intersectingEntries.reduce((prev, current) =>
                     prev.boundingClientRect.top < current.boundingClientRect.top ? prev : current
                 );
-                
+
                 const activeId = topEntry.target.id;
                 document.querySelectorAll('.toc-link').forEach(link => {
                     link.classList.remove('active');
@@ -110,19 +117,18 @@ const ResultsTab: React.FC<ResultsTabProps> = ({ markdown, isLoading, projectNam
         },
         { rootMargin: '-80px 0px -60% 0px' }
     );
-    
+
     toc.forEach(item => {
         const el = document.getElementById(item.id);
         if (el) observer.observe(el);
     });
-    
+
     observerRef.current = observer;
 
     return () => {
         observer.disconnect();
     };
 }, [toc, activeView]);
-
 
   const getTOCLinkClass = (level: number) => {
       if (level === 1) return "font-bold text-indigo-300";
@@ -152,6 +158,51 @@ const ResultsTab: React.FC<ResultsTabProps> = ({ markdown, isLoading, projectNam
     showToast('Download iniciado!', 'info');
   };
 
+  const handleZoomIn = useCallback(() => {
+    const container = graphContainerRef.current?.querySelector('canvas');
+    if (!container) return;
+    const wheel = new WheelEvent('wheel', { deltaY: -120, clientX: window.innerWidth / 2, clientY: window.innerHeight / 2 });
+    container.dispatchEvent(wheel);
+  }, []);
+
+  const handleZoomOut = useCallback(() => {
+    const container = graphContainerRef.current?.querySelector('canvas');
+    if (!container) return;
+    const wheel = new WheelEvent('wheel', { deltaY: 120, clientX: window.innerWidth / 2, clientY: window.innerHeight / 2 });
+    container.dispatchEvent(wheel);
+  }, []);
+
+  const handleCenter = useCallback(() => {
+    setSelectedNode(null);
+    const canvas = graphContainerRef.current?.querySelector('canvas');
+    if (canvas) {
+      canvas.dispatchEvent(new MouseEvent('mouseup'));
+    }
+  }, []);
+
+  const handleReset = useCallback(() => {
+    setSelectedNode(null);
+    const canvas = graphContainerRef.current?.querySelector('canvas');
+    if (canvas) {
+      const rect = canvas.getBoundingClientRect();
+      canvas.dispatchEvent(new MouseEvent('mouseup', { clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2 }));
+    }
+  }, []);
+
+  const handleFullscreen = useCallback(() => {
+    const el = graphContainerRef.current;
+    if (!el) return;
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else {
+      el.requestFullscreen();
+    }
+  }, []);
+
+  const handleNodeSelect = useCallback((node: GraphNode | null) => {
+    setSelectedNode(node);
+  }, []);
+
   if (isLoading) {
     return (
         <div className="flex flex-col items-center justify-center text-center p-12 bg-slate-800/50 rounded-2xl border border-slate-700">
@@ -162,7 +213,7 @@ const ResultsTab: React.FC<ResultsTabProps> = ({ markdown, isLoading, projectNam
     );
   }
 
-  if (!markdown) {
+  if (!markdown && !hasGraph) {
     return (
         <div className="flex flex-col items-center justify-center text-center p-12 bg-slate-800/50 rounded-2xl border border-slate-700">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-20 w-20 text-slate-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
@@ -179,6 +230,9 @@ const ResultsTab: React.FC<ResultsTabProps> = ({ markdown, isLoading, projectNam
                 <div className="flex space-x-1">
                     <button onClick={() => setActiveView('rendered')} className={`px-4 py-2 font-medium rounded-t-lg transition-colors ${activeView === 'rendered' ? 'bg-slate-700 text-indigo-400' : 'text-slate-400 hover:bg-slate-700/50'}`}>Visualização Formatada</button>
                     <button onClick={() => setActiveView('raw')} className={`px-4 py-2 font-medium rounded-t-lg transition-colors ${activeView === 'raw' ? 'bg-slate-700 text-indigo-400' : 'text-slate-400 hover:bg-slate-700/50'}`}>Markdown Raw</button>
+                    {hasGraph && (
+                      <button onClick={() => setActiveView('graph')} className={`px-4 py-2 font-medium rounded-t-lg transition-colors ${activeView === 'graph' ? 'bg-slate-700 text-indigo-400' : 'text-slate-400 hover:bg-slate-700/50'}`}>Grafo</button>
+                    )}
                 </div>
                 <div className="flex space-x-2">
                     <button onClick={handleCopy} className="flex items-center px-3 py-1.5 text-xs font-medium text-slate-300 bg-slate-700 hover:bg-slate-600 rounded-md transition-colors border border-slate-600">
@@ -207,16 +261,40 @@ const ResultsTab: React.FC<ResultsTabProps> = ({ markdown, isLoading, projectNam
                 </aside>
             )}
             <div ref={renderedContentRef} className="markdown-body prose-invert max-w-none flex-1 min-w-0 prose-headings:text-indigo-300 prose-a:text-indigo-400 prose-strong:text-amber-300">
-                {/* Content is injected by useEffect */}
             </div>
         </div>
-        
+
         <div className={activeView === 'raw' ? 'block' : 'hidden'}>
             <textarea
                 readOnly
                 value={markdown}
                 className="w-full h-[calc(100vh-250px)] bg-slate-900 text-slate-300 font-mono text-sm p-4 rounded-lg border border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
+        </div>
+
+        <div className={activeView === 'graph' ? 'block' : 'hidden'}>
+          <div ref={graphContainerRef} className="flex gap-4 h-[calc(100vh-250px)] relative">
+            <div className="flex-1 relative">
+              <KnowledgeGraph
+                nodes={graphNodes}
+                links={graphLinks}
+                onNodeSelect={handleNodeSelect}
+                selectedNodeId={selectedNode?.id}
+              />
+              <KnowledgeGraphControls
+                onZoomIn={handleZoomIn}
+                onZoomOut={handleZoomOut}
+                onCenter={handleCenter}
+                onReset={handleReset}
+                onFullscreen={handleFullscreen}
+              />
+            </div>
+            <GraphSidebar
+              selectedNode={selectedNode}
+              totalNodes={graphNodes.length}
+              totalLinks={graphLinks.length}
+            />
+          </div>
         </div>
     </div>
   );
