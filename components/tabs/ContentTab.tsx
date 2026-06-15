@@ -3,7 +3,7 @@ import { FileObject } from '../../types';
 import FileItem from '../FileItem';
 
 const MAX_FILES = 10;
-const MAX_FILE_SIZE_MB = 5;
+const MAX_FILE_SIZE_MB = 100;
 
 interface ContentTabProps {
   contextText: string;
@@ -69,11 +69,15 @@ const ContentTab: React.FC<ContentTabProps> = ({ contextText, setContextText, fi
              setFiles(prev => prev.map((f, i) => i === fileIndex ? {...f, status: 'error'} : f));
         };
         
-        const supportedExtensions = ['.ts', '.tsx', '.js', '.jsx', '.py', '.json', '.md', '.css', '.html', '.txt'];
-        const isSupported = supportedExtensions.some(ext => fileObject.file.name.endsWith(ext)) || fileObject.file.type.startsWith('text/');
+        const textExtensions = ['.ts', '.tsx', '.js', '.jsx', '.py', '.json', '.md', '.css', '.html', '.txt'];
+        const compressedExtensions = ['.zip', '.tar', '.gz', '.rar', '.7z'];
+        const isTextSupported = textExtensions.some(ext => fileObject.file.name.endsWith(ext)) || fileObject.file.type.startsWith('text/');
+        const isCompressedSupported = compressedExtensions.some(ext => fileObject.file.name.endsWith(ext)) || fileObject.file.type.includes('zip') || fileObject.file.type.includes('tar') || fileObject.file.type.includes('compressed');
         
-        if (isSupported) {
+        if (isTextSupported) {
             reader.readAsText(fileObject.file);
+        } else if (isCompressedSupported) {
+            setFiles(prev => prev.map((f, i) => i === fileIndex ? {...f, content: "[Arquivo Compactado - Anexado com sucesso]", status: 'success'} : f));
         } else {
             showToast(`Arquivo "${fileObject.file.name}" não é um formato suportado.`, 'error');
             setFiles(prev => prev.map((f, i) => i === fileIndex ? {...f, content: "Conteúdo não suportado, não será incluído no prompt.", status: 'success'} : f));
@@ -105,7 +109,7 @@ const ContentTab: React.FC<ContentTabProps> = ({ contextText, setContextText, fi
       
       <Card
         title="Anexar Arquivos"
-        description={`Envie até ${MAX_FILES} arquivos de suporte (.ts, .tsx, .js, .jsx, .py, .json, .md, .css, .html). O conteúdo de texto será adicionado ao contexto.`}
+        description={`Envie até ${MAX_FILES} arquivos de suporte (.ts, .tsx, .js, .jsx, .py, .json, .md, .css, .html, .zip, .tar, .gz, .rar, .7z). O conteúdo de texto será adicionado ao contexto.`}
        >
          <div className="flex flex-wrap gap-3 items-center">
              <input
@@ -113,7 +117,7 @@ const ContentTab: React.FC<ContentTabProps> = ({ contextText, setContextText, fi
                  ref={fileInputRef}
                  className="hidden"
                  multiple
-                 accept=".ts,.tsx,.js,.jsx,.py,.json,.md,.css,.html,.txt"
+                 accept=".ts,.tsx,.js,.jsx,.py,.json,.md,.css,.html,.txt,.zip,.tar,.gz,.rar,.7z"
                  onChange={handleFileChange}
                  disabled={files.length >= MAX_FILES}
              />
