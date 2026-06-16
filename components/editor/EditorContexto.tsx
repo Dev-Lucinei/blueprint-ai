@@ -1,25 +1,16 @@
 import React, { useCallback, useRef, useState } from 'react';
 import type { AIProvider, AppMode, FileObject } from '../../types';
-import { PROVIDER_MODELS, getDefaultModel } from '../../types';
 import { Card } from '../ui/Card';
 import { InputField } from '../ui/InputField';
 import { TextAreaField } from '../ui/TextAreaField';
 import FileItem from '../FileItem';
+import { AiConfigSidebar } from './AiConfigSidebar';
 
 const MAX_FILES = 10;
 const MAX_FILE_SIZE_MB = 100;
 
 const TEXT_EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.py', '.json', '.md', '.css', '.html', '.txt'];
 const COMPRESSED_EXTENSIONS = ['.zip', '.tar', '.gz', '.rar', '.7z'];
-
-const isApiKeyConfigured = (provider: AIProvider): boolean => {
-  const keys: Record<AIProvider, string> = {
-    gemini: (import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_API_KEY || '') as string,
-    openrouter: (import.meta.env.VITE_OPENROUTER_API_KEY || '') as string,
-    openai: (import.meta.env.VITE_OPENAI_API_KEY || '') as string,
-  };
-  return !!keys[provider];
-};
 
 interface EditorContextoProps {
   // Configurações do projeto
@@ -72,38 +63,7 @@ const EditorContexto: React.FC<EditorContextoProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dirInputRef = useRef<HTMLInputElement>(null);
   const [isDragOver, setIsDragOver] = useState(false);
-
-  // --- IA ---
-  const providers: { id: AIProvider; name: string }[] = [
-    { id: 'gemini', name: 'Google Gemini' },
-    { id: 'openrouter', name: 'OpenRouter' },
-    { id: 'openai', name: 'OpenAI' },
-    { id: 'ollama', name: 'Ollama (Local)' },
-  ];
-
-  const [ollamaModels, setOllamaModels] = useState<string[]>([]);
-
-  React.useEffect(() => {
-    if (aiProvider === 'ollama') {
-      fetch('http://localhost:11434/api/tags')
-        .then(res => res.json())
-        .then(data => {
-          if (data && data.models) {
-            const models = data.models.map((m: { name: string }) => m.name);
-            setOllamaModels(models);
-            if (models.length > 0 && !models.includes(aiModel)) {
-              onSetAiConfig({ model: models[0] });
-            }
-          }
-        })
-        .catch(err => console.error('Falha ao buscar modelos do Ollama:', err));
-    }
-  }, [aiProvider]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const handleProviderChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const p = e.target.value as AIProvider;
-    onSetAiConfig({ provider: p, model: getDefaultModel(p) });
-  };
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   // --- Arquivos ---
   const processFiles = useCallback((selectedFiles: FileList | File[]) => {
@@ -230,49 +190,13 @@ const EditorContexto: React.FC<EditorContextoProps> = ({
       </Card>
 
       {/* Seção: Configurações de IA */}
-      <Card>
-        <div className="p-4 border-b border-slate-700">
-          <h2 className="text-lg font-semibold text-indigo-300">Configurações de IA</h2>
-        </div>
-        <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label htmlFor="provider" className="block text-sm font-medium text-slate-300">
-                Provedor de IA
-              </label>
-              <select
-                id="provider"
-                value={aiProvider}
-                onChange={handleProviderChange}
-                className="mt-1 block w-full p-3 bg-slate-900/70 border border-slate-600 rounded-lg text-slate-100 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition"
-              >
-                {providers.map(p => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} {!isApiKeyConfigured(p.id) ? '(sem API key)' : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="model" className="block text-sm font-medium text-slate-300">
-                Modelo
-              </label>
-              <select
-                id="model"
-                value={aiModel}
-                onChange={e => onSetAiConfig({ model: e.target.value })}
-                className="mt-1 block w-full p-3 bg-slate-900/70 border border-slate-600 rounded-lg text-slate-100 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition"
-              >
-                {(aiProvider === 'ollama' && ollamaModels.length > 0 ? ollamaModels : PROVIDER_MODELS[aiProvider]).map(m => (
-                  <option key={m} value={m}>
-                    {m}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-      </Card>
+      <AiConfigSidebar
+        aiProvider={aiProvider}
+        aiModel={aiModel}
+        onSetAiConfig={onSetAiConfig}
+        isOpen={sidebarOpen}
+        onToggle={() => setSidebarOpen(!sidebarOpen)}
+      />
 
       {/* Seção: Contexto Adicional */}
       <Card>
