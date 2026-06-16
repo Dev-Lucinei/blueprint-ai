@@ -8,8 +8,7 @@ import { parseGraphFromAI } from './services/pipelineService';
 import Header from './components/Header';
 import DesktopTabs from './components/DesktopTabs';
 import MobileTabs from './components/MobileTabs';
-import ProjectTab from './components/tabs/ProjectTab';
-import ContentTab from './components/tabs/ContentTab';
+import EditorContexto from './components/editor/EditorContexto';
 import ActionsTab from './components/tabs/ActionsTab';
 import ResultsTab from './components/tabs/ResultsTab';
 import AnalyzeTab from './components/AnalyzeTab';
@@ -258,28 +257,23 @@ const App: React.FC = () => {
 
       <main className="flex-1 container mx-auto p-4 lg:px-8 xl:px-4 max-w-7xl overflow-y-auto pb-24 lg:pb-4">
         <div className={activeTab === 'projeto' ? '' : 'hidden'}>
-          <ProjectTab
+          <EditorContexto
             projectName={projectName}
-            setProjectName={setProjectName}
             projectDeadline={projectDeadline}
-            setProjectDeadline={setProjectDeadline}
             projectDescription={projectDescription}
-            setProjectDescription={setProjectDescription}
-            onGenerate={handleGenerate}
-            isLoading={isLoading}
-            aiProvider={aiProvider}
-            setAiProvider={setAiProvider}
-            aiModel={aiModel}
-            setAiModel={setAiModel}
-          />
-        </div>
-        <div className={activeTab === 'conteudo' ? '' : 'hidden'}>
-          <ContentTab
             contextText={contextText}
-            setContextText={setContextText}
             files={files}
-            setFiles={setFiles}
-            showToast={showToast}
+            aiProvider={aiProvider}
+            aiModel={aiModel}
+            appMode={appMode}
+            isLoading={isLoading}
+            onUpdateProject={(p) => dispatch({ type: 'UPDATE_PROJECT', payload: p })}
+            onSetContextText={(t) => dispatch({ type: 'SET_CONTEXT_TEXT', payload: t })}
+            onSetFiles={setFiles}
+            onRemoveFile={(i) => dispatch({ type: 'REMOVE_FILE', payload: i })}
+            onSetAiConfig={(c) => dispatch({ type: 'SET_AI_CONFIG', payload: c })}
+            onSetAppMode={(m) => dispatch({ type: 'SET_APP_MODE', payload: m })}
+            onGenerate={handleGenerate}
           />
         </div>
          <div className={activeTab === 'acoes' ? '' : 'hidden'}>
