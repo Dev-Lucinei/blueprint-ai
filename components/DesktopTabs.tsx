@@ -10,9 +10,7 @@ interface DesktopTabsProps {
 const DesktopTabs: React.FC<DesktopTabsProps> = ({ activeTab, setActiveTab }) => {
   const tabs: { id: Tab; label: string }[] = [
     { id: 'projeto', label: 'Projeto' },
-    { id: 'conteudo', label: 'Conteúdo' },
     { id: 'analisar', label: 'Analisar' },
-    { id: 'acoes', label: 'Ações' },
     { id: 'resultados', label: 'Resultados' },
   ];
 

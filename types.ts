@@ -1,5 +1,5 @@
 
-export type Tab = 'projeto' | 'conteudo' | 'acoes' | 'resultados' | 'analisar';
+export type Tab = 'projeto' | 'analisar' | 'resultados';
 export type AppMode = 'documentacao' | 'analise';
 
 export type AIProvider = 'gemini' | 'openrouter' | 'openai' | 'ollama';
