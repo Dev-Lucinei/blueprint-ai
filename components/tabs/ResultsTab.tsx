@@ -6,6 +6,7 @@ import { GraphNode, GraphLink } from '../../types';
 import KnowledgeGraph from '../KnowledgeGraph';
 import GraphSidebar from '../GraphSidebar';
 import KnowledgeGraphControls from '../KnowledgeGraphControls';
+import { ExportToolbar } from '../workspace/ExportToolbar';
 
 interface ResultsTabProps {
   markdown: string;
@@ -245,6 +246,12 @@ const ResultsTab: React.FC<ResultsTabProps> = ({ markdown, isLoading, projectNam
                 </div>
             </div>
         </div>
+
+        {markdown && (
+          <div className="mb-4">
+            <ExportToolbar markdown={markdown} projectName={projectName} />
+          </div>
+        )}
 
         <div className={activeView === 'rendered' ? 'flex gap-8' : 'hidden'}>
             {toc.length > 0 && (
