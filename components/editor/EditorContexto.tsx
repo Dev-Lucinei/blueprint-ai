@@ -6,6 +6,7 @@ import { TextAreaField } from '../ui/TextAreaField';
 import FileItem from '../FileItem';
 import { AiConfigSidebar } from './AiConfigSidebar';
 import { FileTree } from './FileTree';
+import { InjectStructureBtn } from './InjectStructureBtn';
 
 const MAX_FILES = 10;
 const MAX_FILE_SIZE_MB = 100;
@@ -208,12 +209,21 @@ const EditorContexto: React.FC<EditorContextoProps> = ({
           </p>
         </div>
         <div className="p-6">
-          <textarea
-            className="w-full p-4 bg-slate-900/70 border border-slate-600 rounded-lg text-slate-100 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition min-h-[150px]"
-            value={contextText}
-            onChange={e => onSetContextText(e.target.value)}
-            placeholder="Cole aqui especificações, trechos de código importantes, diagramas em ASCII ou requisitos não estruturados."
-          />
+          <div className="relative">
+            <div className="absolute top-2 right-2 z-10">
+              <InjectStructureBtn
+                files={files}
+                onInject={(structure) => onSetContextText(contextText + structure)}
+                disabled={files.length === 0}
+              />
+            </div>
+            <textarea
+              className="w-full p-4 bg-slate-900/70 border border-slate-600 rounded-lg text-slate-100 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition min-h-[150px]"
+              value={contextText}
+              onChange={e => onSetContextText(e.target.value)}
+              placeholder="Cole aqui especificações, trechos de código importantes, diagramas em ASCII ou requisitos não estruturados."
+            />
+          </div>
         </div>
       </Card>
 
