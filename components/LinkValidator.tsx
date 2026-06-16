@@ -8,15 +8,24 @@ interface LinkValidatorProps {
 
 // Mock function to check link status
 // In a real-world scenario, this would be a backend call to avoid CORS issues.
+const isKnownHost = (url: string, host: string): boolean => {
+  try {
+    const hostname = new URL(url).hostname;
+    return hostname === host || hostname.endsWith('.' + host);
+  } catch {
+    return false;
+  }
+};
+
 const checkLinkStatus = (url: string): Promise<LinkValidationResult> => {
   return new Promise(resolve => {
     setTimeout(() => {
       // Simulate different responses for demonstration
-      if (url.includes('github.com') || url.includes('google.com') || url.includes('slack.com')) {
+      if (isKnownHost(url, 'github.com') || isKnownHost(url, 'google.com') || isKnownHost(url, 'slack.com')) {
         resolve({ url, status: 200, statusText: 'OK' });
-      } else if (url.includes('broken-link-example.com')) {
+      } else if (isKnownHost(url, 'broken-link-example.com')) {
         resolve({ url, status: 404, statusText: 'Not Found' });
-      } else if (url.includes('timeout-example.com')) {
+      } else if (isKnownHost(url, 'timeout-example.com')) {
         resolve({ url, status: 'error', statusText: 'Timeout' });
       } else {
         // Randomly succeed or fail for other links
