@@ -116,3 +116,51 @@ export interface ExtractedContext {
   architecture: string;
   dataFlow: string;
 }
+
+// === APPLICATION STATE (REDUCER) ===
+export interface AppState {
+  activeTab: Tab;
+  appMode: AppMode;
+  projectName: string;
+  projectDeadline: string;
+  projectDescription: string;
+  contextText: string;
+  files: FileObject[];
+  aiProvider: AIProvider;
+  aiModel: string;
+  isLoading: boolean;
+  isRefining: boolean;
+  generatedMarkdown: string;
+  sidebarOpen: boolean;
+}
+
+export type AppAction =
+  | { type: 'SET_ACTIVE_TAB'; payload: Tab }
+  | { type: 'SET_APP_MODE'; payload: AppMode }
+  | { type: 'UPDATE_PROJECT'; payload: Partial<Pick<AppState, 'projectName' | 'projectDeadline' | 'projectDescription'>> }
+  | { type: 'SET_CONTEXT_TEXT'; payload: string }
+  | { type: 'ADD_FILES'; payload: FileObject[] }
+  | { type: 'REMOVE_FILE'; payload: number }
+  | { type: 'SET_FILES'; payload: FileObject[] }
+  | { type: 'SET_AI_CONFIG'; payload: { provider?: AIProvider; model?: string } }
+  | { type: 'SET_LOADING'; payload: boolean }
+  | { type: 'SET_REFINING'; payload: boolean }
+  | { type: 'SET_GENERATED_MD'; payload: string }
+  | { type: 'SET_SIDEBAR_OPEN'; payload: boolean }
+  | { type: 'RESET' };
+
+export const initialState: AppState = {
+  activeTab: 'projeto',
+  appMode: 'documentacao',
+  projectName: '',
+  projectDeadline: '',
+  projectDescription: '',
+  contextText: '',
+  files: [],
+  aiProvider: 'gemini',
+  aiModel: '',
+  isLoading: false,
+  isRefining: false,
+  generatedMarkdown: '',
+  sidebarOpen: true,
+};

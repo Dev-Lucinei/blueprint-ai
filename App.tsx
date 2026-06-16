@@ -1,6 +1,6 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
 import mermaid from 'mermaid';
-import { Tab, FileObject, AIProvider, AIConfig, AppMode, getDefaultModel } from './types';
+import { Tab, FileObject, AIProvider, AIConfig, AppMode, AppState, AppAction, initialState } from './types';
 import { getDocSystemInstruction, getRefinementSystemInstruction } from './services/geminiService';
 import { aiClient } from './services/aiProvider';
 import { usePipeline } from './hooks/usePipeline';
@@ -16,24 +16,78 @@ import AnalyzeTab from './components/AnalyzeTab';
 import Toast from './components/Toast';
 import ProjectVisualizerModal from './components/ProjectVisualizerModal';
 
-const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<Tab>('projeto');
-  const [appMode, setAppMode] = useState<AppMode>('documentacao');
-  const [projectName, setProjectName] = useState('');
-  const [projectDeadline, setProjectDeadline] = useState('');
-  const [projectDescription, setProjectDescription] = useState('');
-  const [contextText, setContextText] = useState('');
-  const [files, setFiles] = useState<FileObject[]>([]);
+function appReducer(state: AppState, action: AppAction): AppState {
+  switch (action.type) {
+    case 'SET_ACTIVE_TAB':
+      return { ...state, activeTab: action.payload };
+    case 'SET_APP_MODE':
+      return { ...state, appMode: action.payload };
+    case 'UPDATE_PROJECT':
+      return { ...state, ...action.payload };
+    case 'SET_CONTEXT_TEXT':
+      return { ...state, contextText: action.payload };
+    case 'ADD_FILES':
+      return { ...state, files: [...state.files, ...action.payload] };
+    case 'REMOVE_FILE':
+      return { ...state, files: state.files.filter((_, i) => i !== action.payload) };
+    case 'SET_FILES':
+      return { ...state, files: action.payload };
+    case 'SET_AI_CONFIG':
+      return { ...state, ...action.payload };
+    case 'SET_LOADING':
+      return { ...state, isLoading: action.payload };
+    case 'SET_REFINING':
+      return { ...state, isRefining: action.payload };
+    case 'SET_GENERATED_MD':
+      return { ...state, generatedMarkdown: action.payload };
+    case 'SET_SIDEBAR_OPEN':
+      return { ...state, sidebarOpen: action.payload };
+    case 'RESET':
+      return initialState;
+    default:
+      return state;
+  }
+}
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [isRefining, setIsRefining] = useState(false);
-  const [generatedMarkdown, setGeneratedMarkdown] = useState('');
+const App: React.FC = () => {
+  const [state, dispatch] = useReducer(appReducer, initialState);
+  const {
+    activeTab, appMode, projectName, projectDeadline,
+    projectDescription, contextText, files, aiProvider,
+    aiModel, isLoading, isRefining, generatedMarkdown,
+  } = state;
 
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const [aiProvider, setAiProvider] = useState<AIProvider>('gemini');
-  const [aiModel, setAiModel] = useState<string>('gemini-2.5-flash');
+  // Ref para acesso ao estado atual em callbacks estáveis (compatibilidade com functional updater do setFiles)
+  const stateRef = useRef(state);
+  stateRef.current = state;
+
+  // --- Wrapper functions: mantêm assinaturas idênticas aos setters originais ---
+  const setActiveTab = useCallback((tab: Tab) => dispatch({ type: 'SET_ACTIVE_TAB', payload: tab }), []);
+  const setAppMode = useCallback((mode: AppMode) => dispatch({ type: 'SET_APP_MODE', payload: mode }), []);
+  const setProjectName = useCallback((name: string) => dispatch({ type: 'UPDATE_PROJECT', payload: { projectName: name } }), []);
+  const setProjectDeadline = useCallback((deadline: string) => dispatch({ type: 'UPDATE_PROJECT', payload: { projectDeadline: deadline } }), []);
+  const setProjectDescription = useCallback((desc: string) => dispatch({ type: 'UPDATE_PROJECT', payload: { projectDescription: desc } }), []);
+  const setContextText = useCallback((text: string) => dispatch({ type: 'SET_CONTEXT_TEXT', payload: text }), []);
+  const setAiProvider = useCallback((provider: AIProvider) => dispatch({ type: 'SET_AI_CONFIG', payload: { provider } }), []);
+  const setAiModel = useCallback((model: string) => dispatch({ type: 'SET_AI_CONFIG', payload: { model } }), []);
+  const setIsLoading = useCallback((loading: boolean) => dispatch({ type: 'SET_LOADING', payload: loading }), []);
+  const setIsRefining = useCallback((refining: boolean) => dispatch({ type: 'SET_REFINING', payload: refining }), []);
+  const setGeneratedMarkdown = useCallback((md: string) => dispatch({ type: 'SET_GENERATED_MD', payload: md }), []);
+
+  /**
+   * setFiles: suporta both value assignment e functional updater (React.SetStateAction<FileObject[]>).
+   * Necessário porque ContentTab usa o padrão setFiles(prev => prev.map(...)).
+   */
+  const setFiles = useCallback((filesOrUpdater: FileObject[] | ((prev: FileObject[]) => FileObject[])) => {
+    if (typeof filesOrUpdater === 'function') {
+      dispatch({ type: 'SET_FILES', payload: filesOrUpdater(stateRef.current.files) });
+    } else {
+      dispatch({ type: 'SET_FILES', payload: filesOrUpdater });
+    }
+  }, []);
 
   const pipeline = usePipeline((stepId, content) => {
     console.log(`Pipeline step ${stepId} completed`);
@@ -54,7 +108,7 @@ const App: React.FC = () => {
       openai: 'gpt-4o',
     };
     setAiModel(defaults[aiProvider]);
-  }, [aiProvider]);
+  }, [aiProvider, setAiModel]);
 
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
     setToast({ message, type });
@@ -181,7 +235,6 @@ const App: React.FC = () => {
     URL.revokeObjectURL(url);
     showToast('Bundle JSON exportado com sucesso!', 'success');
   }, [projectName, projectDeadline, projectDescription, contextText, files, aiProvider, aiModel, generatedMarkdown, graphData, showToast]);
-
 
   useEffect(() => {
     mermaid.initialize({
