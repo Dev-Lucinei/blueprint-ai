@@ -6,8 +6,6 @@ import { aiClient } from './services/aiProvider';
 import { usePipeline } from './hooks/usePipeline';
 import { parseGraphFromAI } from './services/pipelineService';
 import Header from './components/Header';
-import DesktopTabs from './components/DesktopTabs';
-import MobileTabs from './components/MobileTabs';
 import { Sidebar } from './components/layout/Sidebar';
 import EditorContexto from './components/editor/EditorContexto';
 
@@ -265,8 +263,6 @@ const App: React.FC = () => {
         />
 
         <div className="flex-1 flex flex-col overflow-hidden">
-          <DesktopTabs activeTab={activeTab} setActiveTab={setActiveTab} mode={appMode} />
-
           <main className="flex-1 overflow-y-auto p-4 lg:px-8 xl:px-4 max-w-7xl mx-auto w-full pb-24 lg:pb-4">
             <div className={activeTab === 'projeto' ? '' : 'hidden'}>
               <EditorContexto
@@ -312,8 +308,6 @@ const App: React.FC = () => {
               />
             </div>
           </main>
-
-          <MobileTabs activeTab={activeTab} setActiveTab={setActiveTab} mode={appMode} />
         </div>
       </div>
 
