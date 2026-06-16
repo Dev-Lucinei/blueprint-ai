@@ -9,7 +9,7 @@ import Header from './components/Header';
 import DesktopTabs from './components/DesktopTabs';
 import MobileTabs from './components/MobileTabs';
 import EditorContexto from './components/editor/EditorContexto';
-import ActionsTab from './components/tabs/ActionsTab';
+
 import ResultsTab from './components/tabs/ResultsTab';
 import AnalyzeTab from './components/AnalyzeTab';
 import Toast from './components/Toast';
@@ -280,17 +280,7 @@ const App: React.FC = () => {
             onGenerate={handleGenerate}
           />
         </div>
-         <div className={activeTab === 'acoes' ? '' : 'hidden'}>
-           <ActionsTab
-             onRefine={handleRefine}
-             isRefining={isRefining}
-             generatedMarkdown={generatedMarkdown}
-             isLoading={isLoading}
-             onOpenVisualizer={() => setIsModalOpen(true)}
-             onExportJSON={handleExportJSON}
-             showToast={showToast}
-           />
-         </div>
+
 
         <div className={activeTab === 'resultados' ? '' : 'hidden'}>
           <ResultsTab
