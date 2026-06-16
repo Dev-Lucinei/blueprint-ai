@@ -1,6 +1,9 @@
 import React from 'react';
 import type { AIProvider } from '../../types';
 import { PROVIDER_MODELS, getDefaultModel } from '../../types';
+import { Card } from '../ui/Card';
+import { InputField } from '../ui/InputField';
+import { TextAreaField } from '../ui/TextAreaField';
 
 const isApiKeyConfigured = (provider: AIProvider): boolean => {
   const keys: Record<AIProvider, string> = {
@@ -26,63 +29,7 @@ interface ProjectTabProps {
   setAiModel: (m: string) => void;
 }
 
-const Card: React.FC<{ children: React.ReactNode; title: string }> = ({ children, title }) => (
-  <div className="bg-slate-800/50 border border-slate-700 rounded-2xl shadow-lg">
-    <div className="p-4 border-b border-slate-700">
-      <h2 className="text-lg font-semibold text-indigo-300">{title}</h2>
-    </div>
-    <div className="p-6">{children}</div>
-  </div>
-);
 
-const InputField: React.FC<{
-  id: string;
-  label: string;
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  type?: string;
-  placeholder?: string;
-  helpText: string;
-}> = ({ id, label, value, onChange, type = 'text', placeholder, helpText }) => (
-  <div>
-    <label htmlFor={id} className="block text-sm font-medium text-slate-300">
-      {label}
-    </label>
-    <input
-      type={type}
-      id={id}
-      value={value}
-      onChange={onChange}
-      className="mt-1 block w-full p-3 bg-slate-900/70 border border-slate-600 rounded-lg text-slate-100 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition"
-      placeholder={placeholder}
-    />
-    <p className="text-xs text-slate-500 mt-1">{helpText}</p>
-  </div>
-);
-
-const TextAreaField: React.FC<{
-  id: string;
-  label: string;
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
-  placeholder?: string;
-  helpText: string;
-}> = ({ id, label, value, onChange, placeholder, helpText }) => (
-  <div>
-    <label htmlFor={id} className="block text-sm font-medium text-slate-300">
-      {label}
-    </label>
-    <textarea
-      id={id}
-      rows={6}
-      value={value}
-      onChange={onChange}
-      className="mt-1 block w-full p-3 bg-slate-900/70 border border-slate-600 rounded-lg text-slate-100 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition"
-      placeholder={placeholder}
-    ></textarea>
-    <p className="text-xs text-slate-500 mt-1">{helpText}</p>
-  </div>
-);
 
 const ProjectTab: React.FC<ProjectTabProps> = ({
   projectName,
@@ -132,75 +79,85 @@ const ProjectTab: React.FC<ProjectTabProps> = ({
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <Card title="Configurações de IA">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label htmlFor="provider" className="block text-sm font-medium text-slate-300">
-              Provedor de IA
-            </label>
-            <select
-              id="provider"
-              value={aiProvider}
-              onChange={handleProviderChange}
-              className="mt-1 block w-full p-3 bg-slate-900/70 border border-slate-600 rounded-lg text-slate-100 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition"
-            >
-              {providers.map(p => (
-                <option key={p.id} value={p.id}>
-                  {p.name} {!isApiKeyConfigured(p.id) ? '(sem API key)' : ''}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="model" className="block text-sm font-medium text-slate-300">
-              Modelo
-            </label>
-            <select
-              id="model"
-              value={aiModel}
-              onChange={e => setAiModel(e.target.value)}
-              className="mt-1 block w-full p-3 bg-slate-900/70 border border-slate-600 rounded-lg text-slate-100 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition"
-            >
-              {(aiProvider === 'ollama' && ollamaModels.length > 0 ? ollamaModels : PROVIDER_MODELS[aiProvider]).map(m => (
-                <option key={m} value={m}>
-                  {m}
-                </option>
-              ))}
-            </select>
+      <Card>
+        <div className="p-4 border-b border-slate-700">
+          <h2 className="text-lg font-semibold text-indigo-300">Configurações de IA</h2>
+        </div>
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label htmlFor="provider" className="block text-sm font-medium text-slate-300">
+                Provedor de IA
+              </label>
+              <select
+                id="provider"
+                value={aiProvider}
+                onChange={handleProviderChange}
+                className="mt-1 block w-full p-3 bg-slate-900/70 border border-slate-600 rounded-lg text-slate-100 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition"
+              >
+                {providers.map(p => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} {!isApiKeyConfigured(p.id) ? '(sem API key)' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="model" className="block text-sm font-medium text-slate-300">
+                Modelo
+              </label>
+              <select
+                id="model"
+                value={aiModel}
+                onChange={e => setAiModel(e.target.value)}
+                className="mt-1 block w-full p-3 bg-slate-900/70 border border-slate-600 rounded-lg text-slate-100 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition"
+              >
+                {(aiProvider === 'ollama' && ollamaModels.length > 0 ? ollamaModels : PROVIDER_MODELS[aiProvider]).map(m => (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
       </Card>
 
-      <Card title="Detalhes do Projeto">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <InputField
-            id="projectName"
-            label="Nome do Projeto *"
-            value={projectName}
-            onChange={e => setProjectName(e.target.value)}
-            placeholder="Ex: Sistema de Gestão de Vendas"
-            helpText="Nome descritivo para identificar seu projeto."
-          />
-          <InputField
-            id="projectDeadline"
-            label="Prazo Estimado"
-            type="date"
-            value={projectDeadline}
-            onChange={e => setProjectDeadline(e.target.value)}
-            helpText="Data limite para conclusão do projeto."
-          />
+      <Card>
+        <div className="p-4 border-b border-slate-700">
+          <h2 className="text-lg font-semibold text-indigo-300">Detalhes do Projeto</h2>
+        </div>
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <InputField
+              label="Nome do Projeto *"
+              value={projectName}
+              onChange={e => setProjectName(e.target.value)}
+              placeholder="Ex: Sistema de Gestão de Vendas"
+            />
+            <InputField
+              label="Prazo Estimado"
+              type="date"
+              value={projectDeadline}
+              onChange={e => setProjectDeadline(e.target.value)}
+            />
+          </div>
         </div>
       </Card>
 
-      <Card title="Descrição Principal">
-        <TextAreaField
-          id="descricaoProjeto"
-          label="Descrição de Alto Nível *"
-          value={projectDescription}
-          onChange={e => setProjectDescription(e.target.value)}
-          placeholder={`Template Sugerido:\n(1) Propósito de Negócio: [Qual problema resolve?]\n(2) Funcionalidades Críticas: [3-5 features principais]\n(3) Exclusões Conhecidas: [O que NÃO será implementado]`}
-          helpText="Descreva o propósito, funcionalidades principais e limitações do projeto."
-        />
+      <Card>
+        <div className="p-4 border-b border-slate-700">
+          <h2 className="text-lg font-semibold text-indigo-300">Descrição Principal</h2>
+        </div>
+        <div className="p-6">
+          <TextAreaField
+            label="Descrição de Alto Nível *"
+            value={projectDescription}
+            onChange={e => setProjectDescription(e.target.value)}
+            placeholder={`Template Sugerido:\n(1) Propósito de Negócio: [Qual problema resolve?]\n(2) Funcionalidades Críticas: [3-5 features principais]\n(3) Exclusões Conhecidas: [O que NÃO será implementado]`}
+            rows={6}
+          />
+        </div>
       </Card>
 
       <div className="bg-slate-800/50 border border-slate-700 rounded-2xl shadow-lg p-6">
