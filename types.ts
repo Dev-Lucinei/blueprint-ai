@@ -2,7 +2,7 @@
 export type Tab = 'projeto' | 'conteudo' | 'acoes' | 'resultados' | 'analisar';
 export type AppMode = 'documentacao' | 'analise';
 
-export type AIProvider = 'gemini' | 'openrouter' | 'openai';
+export type AIProvider = 'gemini' | 'openrouter' | 'openai' | 'ollama';
 
 export interface AIConfig {
   provider: AIProvider;
@@ -13,12 +13,20 @@ export const PROVIDER_MODELS: Record<AIProvider, string[]> = {
   gemini: ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'],
   openrouter: ['openai/gpt-4o', 'openai/gpt-4o-mini', 'anthropic/claude-3.5-sonnet', 'google/gemini-2.0-flash', 'mistralai/mistral-7b-instruct'],
   openai: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo'],
+  ollama: [
+    'qwen2.5:16K',
+    'qwen2.5-coder:7b',
+    'phi4:Q4',
+    'hf.co/MaziyarPanahi/Phi-4-mini-instruct-GGUF:Q4_K_M',
+    'phi4-mini:latest'
+  ],
 };
 
 export const PROVIDER_DEFAULT_MODEL: Record<AIProvider, string> = {
   gemini: 'gemini-2.5-flash',
   openrouter: 'openai/gpt-4o',
   openai: 'gpt-4o',
+  ollama: 'qwen2.5:16K',
 };
 
 export function getDefaultModel(provider: AIProvider): string {
@@ -56,8 +64,8 @@ export interface GanttTask {
 }
 
 export interface KanbanTask {
-    id: string;
-    content: string;
+  id: string;
+  content: string;
 }
 
 export interface LinkValidationResult {

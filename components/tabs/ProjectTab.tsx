@@ -102,7 +102,27 @@ const ProjectTab: React.FC<ProjectTabProps> = ({
     { id: 'gemini', name: 'Google Gemini' },
     { id: 'openrouter', name: 'OpenRouter' },
     { id: 'openai', name: 'OpenAI' },
+    { id: 'ollama', name: 'Ollama (Local)' },
   ];
+
+  const [ollamaModels, setOllamaModels] = React.useState<string[]>([]);
+
+  React.useEffect(() => {
+    if (aiProvider === 'ollama') {
+      fetch('http://localhost:11434/api/tags')
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.models) {
+            const models = data.models.map((m: any) => m.name);
+            setOllamaModels(models);
+            if (models.length > 0 && !models.includes(aiModel)) {
+              setAiModel(models[0]);
+            }
+          }
+        })
+        .catch(err => console.error('Falha ao buscar modelos do Ollama:', err));
+    }
+  }, [aiProvider, aiModel, setAiModel]);
 
   const handleProviderChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const p = e.target.value as AIProvider;
@@ -141,7 +161,7 @@ const ProjectTab: React.FC<ProjectTabProps> = ({
               onChange={e => setAiModel(e.target.value)}
               className="mt-1 block w-full p-3 bg-slate-900/70 border border-slate-600 rounded-lg text-slate-100 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition"
             >
-              {PROVIDER_MODELS[aiProvider].map(m => (
+              {(aiProvider === 'ollama' && ollamaModels.length > 0 ? ollamaModels : PROVIDER_MODELS[aiProvider]).map(m => (
                 <option key={m} value={m}>
                   {m}
                 </option>

@@ -52,6 +52,8 @@ const getApiKey = (provider: AIProvider): string => {
       return import.meta.env.VITE_OPENROUTER_API_KEY || '';
     case 'openai':
       return import.meta.env.VITE_OPENAI_API_KEY || '';
+    case 'ollama':
+      return 'local';
   }
 };
 
@@ -190,19 +192,84 @@ const generateWithOpenAI = async (
   }, 5, 2000);
 };
 
+const generateWithOllama = async (
+  prompt: string,
+  config: AIConfig,
+  options?: GenerateOptions
+): Promise<AIResponse> => {
+  return withRetry(async () => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(new Error('Ollama demorou mais de 10 minutos para responder (Timeout).')), 600000); // 10 min timeout
+    try {
+      const response = await fetch('http://localhost:11434/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: config.model || 'qwen2.5:16K',
+          messages: [
+            ...(options?.systemInstruction
+              ? [{ role: 'system', content: options.systemInstruction }]
+              : []),
+            { role: 'user', content: prompt },
+          ],
+          stream: false,
+          options: {
+            temperature: options?.temperature ?? 0.7,
+            num_predict: options?.maxTokens ?? 8192,
+          }
+        }),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        const err = await response.text();
+        throw new Error(`Ollama error ${response.status}: ${err}`);
+      }
+
+      const data = await response.json();
+      return {
+        text: data.message?.content ?? '',
+        usage: {
+          inputTokens: data.prompt_eval_count,
+          outputTokens: data.eval_count,
+          totalTokens: (data.prompt_eval_count || 0) + (data.eval_count || 0),
+        },
+      };
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }, 2, 2000); // 2 tentativas locais
+};
+
 export const aiClient: AIProviderClient = {
   generate: async (
     prompt: string,
     config: AIConfig,
     options?: GenerateOptions
   ): Promise<AIResponse> => {
-    switch (config.provider) {
-      case 'gemini':
-        return generateWithGemini(prompt, config, options);
-      case 'openrouter':
-        return generateWithOpenRouter(prompt, config, options);
-      case 'openai':
-        return generateWithOpenAI(prompt, config, options);
+    try {
+      switch (config.provider) {
+        case 'gemini':
+          return await generateWithGemini(prompt, config, options);
+        case 'openrouter':
+          return await generateWithOpenRouter(prompt, config, options);
+        case 'openai':
+          return await generateWithOpenAI(prompt, config, options);
+        case 'ollama':
+          return await generateWithOllama(prompt, config, options);
+      }
+    } catch (error) {
+      if (config.provider !== 'ollama') {
+        console.warn(`[Fallback] Provider ${config.provider} falhou. Tentando Ollama...`);
+        try {
+          return await generateWithOllama(prompt, { provider: 'ollama', model: 'qwen2.5:16K' }, options);
+        } catch (fallbackError) {
+          const originalMsg = error instanceof Error ? error.message : String(error);
+          const fallbackMsg = fallbackError instanceof Error ? fallbackError.message : String(fallbackError);
+          throw new Error(`Erro original (${config.provider}): ${originalMsg} \nErro Fallback (Ollama): ${fallbackMsg}`);
+        }
+      }
+      throw error;
     }
   },
 };
@@ -212,6 +279,7 @@ export function getDefaultModel(provider: AIProvider): string {
     gemini: 'gemini-2.5-flash',
     openrouter: 'openai/gpt-4o',
     openai: 'gpt-4o',
+    ollama: 'qwen2.5:16K',
   };
   return defaults[provider];
 }
