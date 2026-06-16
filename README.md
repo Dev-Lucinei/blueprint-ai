@@ -1,7 +1,3 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
-
 # 🚀 Blueprint AI
 
 **Blueprint AI** é uma ferramenta poderosa para arquitetos de software e engenheiros de prompt que automatiza a criação de documentações técnicas e gerenciais completas para projetos de software. Utilizando modelos de IA avançados (como Google Gemini, OpenAI e OpenRouter), a ferramenta transforma descrições simples em Blueprints de Implementação detalhados, prontos para serem utilizados por agentes de codificação autônomos ou equipes de desenvolvimento.
