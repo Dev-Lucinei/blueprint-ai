@@ -58,6 +58,7 @@ const App: React.FC = () => {
 
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [chatHistory, setChatHistory] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([]);
 
   // Ref para acesso ao estado atual em callbacks estáveis (compatibilidade com functional updater do setFiles)
   const stateRef = useRef(state);
@@ -190,6 +191,7 @@ const App: React.FC = () => {
       return;
     }
     setIsRefining(true);
+    setChatHistory(prev => [...prev, { role: 'user', content: refinementQuery }]);
     try {
       const config: AIConfig = { provider: aiProvider, model: aiModel };
       const systemInstruction = getRefinementSystemInstruction(refinementQuery, generatedMarkdown);
@@ -197,9 +199,11 @@ const App: React.FC = () => {
         systemInstruction,
       });
       setGeneratedMarkdown(response.text.trim());
+      setChatHistory(prev => [...prev, { role: 'assistant', content: 'Refinamento aplicado com sucesso!' }]);
       showToast('Refinamento aplicado com sucesso!', 'success');
     } catch (error) {
       console.error('Erro ao refinar documentação:', error);
+      setChatHistory(prev => [...prev, { role: 'assistant', content: 'Erro ao aplicar refinamento.' }]);
       showToast('Erro ao refinar documentação.', 'error');
     } finally {
       setIsRefining(false);
@@ -296,6 +300,9 @@ const App: React.FC = () => {
             showToast={showToast}
             graphNodes={graphData.nodes}
             graphLinks={graphData.links}
+            onRefine={handleRefine}
+            isRefining={isRefining}
+            chatHistory={chatHistory}
           />
         </div>
         <div className={activeTab === 'analisar' ? '' : 'hidden'}>

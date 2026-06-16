@@ -7,6 +7,7 @@ import KnowledgeGraph from '../KnowledgeGraph';
 import GraphSidebar from '../GraphSidebar';
 import KnowledgeGraphControls from '../KnowledgeGraphControls';
 import { ExportToolbar } from '../workspace/ExportToolbar';
+import { RefinementChat } from '../workspace/RefinementChat';
 
 interface ResultsTabProps {
   markdown: string;
@@ -15,11 +16,14 @@ interface ResultsTabProps {
   showToast: (message: string, type: 'success' | 'error' | 'info') => void;
   graphNodes?: GraphNode[];
   graphLinks?: GraphLink[];
+  onRefine?: (query: string) => Promise<void>;
+  isRefining?: boolean;
+  chatHistory?: Array<{ role: 'user' | 'assistant'; content: string }>;
 }
 
 type ViewMode = 'rendered' | 'raw' | 'graph';
 
-const ResultsTab: React.FC<ResultsTabProps> = ({ markdown, isLoading, projectName, showToast, graphNodes = [], graphLinks = [] }) => {
+const ResultsTab: React.FC<ResultsTabProps> = ({ markdown, isLoading, projectName, showToast, graphNodes = [], graphLinks = [], onRefine, isRefining = false, chatHistory = [] }) => {
   const [activeView, setActiveView] = useState<ViewMode>('rendered');
   const renderedContentRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
@@ -251,6 +255,14 @@ const ResultsTab: React.FC<ResultsTabProps> = ({ markdown, isLoading, projectNam
           <div className="mb-4">
             <ExportToolbar markdown={markdown} projectName={projectName} />
           </div>
+        )}
+
+        {markdown && onRefine && (
+          <RefinementChat
+            onRefine={onRefine}
+            isRefining={isRefining}
+            chatHistory={chatHistory}
+          />
         )}
 
         <div className={activeView === 'rendered' ? 'flex gap-8' : 'hidden'}>
