@@ -8,6 +8,7 @@ import { parseGraphFromAI } from './services/pipelineService';
 import Header from './components/Header';
 import DesktopTabs from './components/DesktopTabs';
 import MobileTabs from './components/MobileTabs';
+import { Sidebar } from './components/layout/Sidebar';
 import EditorContexto from './components/editor/EditorContexto';
 
 import ResultsTab from './components/tabs/ResultsTab';
@@ -257,55 +258,64 @@ const App: React.FC = () => {
 
       <Header mode={appMode} setMode={setAppMode} />
 
-      <DesktopTabs activeTab={activeTab} setActiveTab={setActiveTab} mode={appMode} />
+      <div className="flex flex-1 overflow-hidden">
+        <Sidebar
+          activeTab={activeTab}
+          onTabChange={(tab) => dispatch({ type: 'SET_ACTIVE_TAB', payload: tab })}
+        />
 
-      <main className="flex-1 container mx-auto p-4 lg:px-8 xl:px-4 max-w-7xl overflow-y-auto pb-24 lg:pb-4">
-        <div className={activeTab === 'projeto' ? '' : 'hidden'}>
-          <EditorContexto
-            projectName={projectName}
-            projectDeadline={projectDeadline}
-            projectDescription={projectDescription}
-            contextText={contextText}
-            files={files}
-            aiProvider={aiProvider}
-            aiModel={aiModel}
-            appMode={appMode}
-            isLoading={isLoading}
-            onUpdateProject={(p) => dispatch({ type: 'UPDATE_PROJECT', payload: p })}
-            onSetContextText={(t) => dispatch({ type: 'SET_CONTEXT_TEXT', payload: t })}
-            onSetFiles={setFiles}
-            onRemoveFile={(i) => dispatch({ type: 'REMOVE_FILE', payload: i })}
-            onSetAiConfig={(c) => dispatch({ type: 'SET_AI_CONFIG', payload: c })}
-            onSetAppMode={(m) => dispatch({ type: 'SET_APP_MODE', payload: m })}
-            onGenerate={handleGenerate}
-          />
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <DesktopTabs activeTab={activeTab} setActiveTab={setActiveTab} mode={appMode} />
+
+          <main className="flex-1 overflow-y-auto p-4 lg:px-8 xl:px-4 max-w-7xl mx-auto w-full pb-24 lg:pb-4">
+            <div className={activeTab === 'projeto' ? '' : 'hidden'}>
+              <EditorContexto
+                projectName={projectName}
+                projectDeadline={projectDeadline}
+                projectDescription={projectDescription}
+                contextText={contextText}
+                files={files}
+                aiProvider={aiProvider}
+                aiModel={aiModel}
+                appMode={appMode}
+                isLoading={isLoading}
+                onUpdateProject={(p) => dispatch({ type: 'UPDATE_PROJECT', payload: p })}
+                onSetContextText={(t) => dispatch({ type: 'SET_CONTEXT_TEXT', payload: t })}
+                onSetFiles={setFiles}
+                onRemoveFile={(i) => dispatch({ type: 'REMOVE_FILE', payload: i })}
+                onSetAiConfig={(c) => dispatch({ type: 'SET_AI_CONFIG', payload: c })}
+                onSetAppMode={(m) => dispatch({ type: 'SET_APP_MODE', payload: m })}
+                onGenerate={handleGenerate}
+              />
+            </div>
+
+
+            <div className={activeTab === 'resultados' ? '' : 'hidden'}>
+              <ResultsTab
+                markdown={generatedMarkdown}
+                isLoading={isLoading}
+                projectName={projectName}
+                showToast={showToast}
+                graphNodes={graphData.nodes}
+                graphLinks={graphData.links}
+                onRefine={handleRefine}
+                isRefining={isRefining}
+                chatHistory={chatHistory}
+              />
+            </div>
+            <div className={activeTab === 'analisar' ? '' : 'hidden'}>
+              <AnalyzeTab
+                pipeline={pipeline}
+                projectDescription={projectDescription}
+                files={files}
+                aiConfig={{ provider: aiProvider, model: aiModel }}
+              />
+            </div>
+          </main>
+
+          <MobileTabs activeTab={activeTab} setActiveTab={setActiveTab} mode={appMode} />
         </div>
-
-
-        <div className={activeTab === 'resultados' ? '' : 'hidden'}>
-          <ResultsTab
-            markdown={generatedMarkdown}
-            isLoading={isLoading}
-            projectName={projectName}
-            showToast={showToast}
-            graphNodes={graphData.nodes}
-            graphLinks={graphData.links}
-            onRefine={handleRefine}
-            isRefining={isRefining}
-            chatHistory={chatHistory}
-          />
-        </div>
-        <div className={activeTab === 'analisar' ? '' : 'hidden'}>
-          <AnalyzeTab
-            pipeline={pipeline}
-            projectDescription={projectDescription}
-            files={files}
-            aiConfig={{ provider: aiProvider, model: aiModel }}
-          />
-        </div>
-      </main>
-
-      <MobileTabs activeTab={activeTab} setActiveTab={setActiveTab} mode={appMode} />
+      </div>
 
       <ProjectVisualizerModal
         isOpen={isModalOpen}
