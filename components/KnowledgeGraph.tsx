@@ -1,5 +1,8 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { GraphNode, GraphLink } from '../types';
+import { useGraphSimulation } from '../hooks/useGraphSimulation';
+import { useGraphZoom } from '../hooks/useGraphZoom';
+import { useGraphDrag } from '../hooks/useGraphDrag';
 
 function MobileFallback({ nodes, links, onNodeSelect, selectedNodeId }: {
   nodes: GraphNode[];
@@ -70,22 +73,9 @@ const NODE_COLORS: Record<string, string> = {
   tech: '#f97316',
 };
 
-const COULOMB_CONSTANT = 5000;
-const SPRING_CONSTANT = 0.005;
-const SPRING_REST_LENGTH = 150;
-const GRAVITY_CONSTANT = 0.001;
-const DAMPING = 0.85;
-const VELOCITY_THRESHOLD = 0.5;
-const MIN_VELOCITY = 0.1;
 const LABEL_OFFSET = 14;
 const FONT_SIZE = 12;
 const HIT_TOLERANCE = 6;
-const MIN_ZOOM = 0.1;
-const MAX_ZOOM = 5;
-const ZOOM_SPEED = 0.001;
-const DRAG_THRESHOLD = 5;
-const GRID_CELL_SIZE = 200;
-const MAX_FORCE_DIST = 400;
 
 function getNodeColor(type: string): string {
   return NODE_COLORS[type] || '#6b7280';
@@ -103,22 +93,10 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const simNodesRef = useRef<GraphNode[]>([]);
-  const simLinksRef = useRef<GraphLink[]>([]);
-  const cameraRef = useRef({ x: 0, y: 0, zoom: 1 });
-  const isSimulatingRef = useRef(true);
-  const isPanningRef = useRef(false);
-  const isDraggingNodeRef = useRef(false);
-  const draggedNodeRef = useRef<GraphNode | null>(null);
-  const hoveredNodeIdRef = useRef<string | null>(null);
-  const lastMouseRef = useRef({ x: 0, y: 0 });
-  const mouseDownRef = useRef({ x: 0, y: 0, isClick: true });
   const canvasSizeRef = useRef({ width: 0, height: 0 });
-  const onNodeSelectRef = useRef(onNodeSelect);
   const selectedNodeIdRef = useRef<string | null | undefined>(null);
   const rafIdRef = useRef(0);
 
-  onNodeSelectRef.current = onNodeSelect;
   selectedNodeIdRef.current = selectedNodeId;
 
   const [isSupported] = useState(() => {
@@ -130,34 +108,55 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
     }
   });
 
-  const screenToWorld = useCallback((screenX: number, screenY: number) => {
-    const cam = cameraRef.current;
-    return {
-      x: (screenX - cam.x) / cam.zoom,
-      y: (screenY - cam.y) / cam.zoom,
-    };
-  }, []);
+  // Hooks personalizados
+  const { simulatedNodes, simulatedLinks } = useGraphSimulation({
+    nodes,
+    links,
+    width: canvasSizeRef.current.width,
+    height: canvasSizeRef.current.height,
+  });
 
-  const hitTestNode = useCallback((worldX: number, worldY: number): GraphNode | null => {
-    const sn = simNodesRef.current;
-    for (let i = sn.length - 1; i >= 0; i--) {
-      const node = sn[i];
-      const dx = worldX - node.x;
-      const dy = worldY - node.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < (node.size || 8) + HIT_TOLERANCE) return node;
-    }
-    return null;
-  }, []);
+  const {
+    cameraRef,
+    handleWheelZoom,
+  } = useGraphZoom();
+
+  const {
+    hoveredNodeId,
+    handleMouseDown,
+    handleMouseMove,
+    handleMouseUp,
+    handleMouseLeave,
+  } = useGraphDrag({
+    onNodeSelect,
+    screenToWorld: useCallback((screenX: number, screenY: number) => {
+      const cam = cameraRef.current;
+      return {
+        x: (screenX - cam.x) / cam.zoom,
+        y: (screenY - cam.y) / cam.zoom,
+      };
+    }, [cameraRef]),
+    hitTestNode: useCallback((worldX: number, worldY: number): GraphNode | null => {
+      for (let i = simulatedNodes.length - 1; i >= 0; i--) {
+        const node = simulatedNodes[i];
+        const dx = worldX - node.x;
+        const dy = worldY - node.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < (node.size || 8) + HIT_TOLERANCE) return node;
+      }
+      return null;
+    }, [simulatedNodes]),
+    cameraRef,
+  });
 
   const getConnectedNodeIds = useCallback((nodeId: string): Set<string> => {
     const connected = new Set<string>([nodeId]);
-    for (const link of simLinksRef.current) {
+    for (const link of simulatedLinks) {
       if (link.source === nodeId) connected.add(link.target);
       if (link.target === nodeId) connected.add(link.source);
     }
     return connected;
-  }, []);
+  }, [simulatedLinks]);
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
@@ -171,12 +170,10 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
     ctx.clearRect(0, 0, width, height);
 
     const cam = cameraRef.current;
-    const sn = simNodesRef.current;
-    const sl = simLinksRef.current;
-    const hoveredId = hoveredNodeIdRef.current;
-    const selId = selectedNodeIdRef.current;
+    const sn = simulatedNodes;
+    const sl = simulatedLinks;
 
-    const connectedIds = hoveredId ? getConnectedNodeIds(hoveredId) : null;
+    const connectedIds = hoveredNodeId ? getConnectedNodeIds(hoveredNodeId) : null;
 
     for (const link of sl) {
       const source = sn.find(n => n.id === link.source);
@@ -185,7 +182,7 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
 
       const highlight = connectedIds
         ? (connectedIds.has(source.id) || connectedIds.has(target.id))
-        : (selId === source.id || selId === target.id);
+        : (selectedNodeIdRef.current === source.id || selectedNodeIdRef.current === target.id);
 
       ctx.beginPath();
       ctx.moveTo(source.x * cam.zoom + cam.x, source.y * cam.zoom + cam.y);
@@ -196,8 +193,8 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
     }
 
     for (const node of sn) {
-      const isHovered = hoveredId === node.id;
-      const isSelected = selId === node.id;
+      const isHovered = hoveredNodeId === node.id;
+      const isSelected = selectedNodeIdRef.current === node.id;
       const sx = node.x * cam.zoom + cam.x;
       const sy = node.y * cam.zoom + cam.y;
       const radius = Math.max(3, (node.size || 8) * cam.zoom);
@@ -232,187 +229,12 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
         ctx.fillText(node.label, sx + radius + LABEL_OFFSET * cam.zoom, sy);
       }
     }
-  }, [getConnectedNodeIds]);
-
-  const simulate = useCallback(() => {
-    const sn = simNodesRef.current;
-    if (sn.length === 0) return;
-
-    const n = sn.length;
-
-    const grid = new Map<number, number[]>();
-    for (let i = 0; i < n; i++) {
-      const node = sn[i];
-      const cx = Math.floor(node.x / GRID_CELL_SIZE);
-      const cy = Math.floor(node.y / GRID_CELL_SIZE);
-      for (let dx = -1; dx <= 1; dx++) {
-        for (let dy = -1; dy <= 1; dy++) {
-          const key = (cx + dx) * 100000 + (cy + dy);
-          if (!grid.has(key)) grid.set(key, []);
-          grid.get(key)!.push(i);
-        }
-      }
-    }
-
-    const considered = new Uint8Array(n);
-    for (let i = 0; i < n; i++) {
-      considered[i] = 0;
-    }
-
-    for (let i = 0; i < n; i++) {
-      const node = sn[i];
-      const cx = Math.floor(node.x / GRID_CELL_SIZE);
-      const cy = Math.floor(node.y / GRID_CELL_SIZE);
-      const key = cx * 100000 + cy;
-      const cell = grid.get(key);
-      if (!cell) continue;
-
-      for (const j of cell) {
-        if (j <= i || considered[j]) continue;
-        const a = sn[i];
-        const b = sn[j];
-        let dx = b.x - a.x;
-        let dy = b.y - a.y;
-        const distSq = dx * dx + dy * dy;
-        if (distSq > MAX_FORCE_DIST * MAX_FORCE_DIST) continue;
-        let dist = Math.sqrt(distSq);
-        if (dist < 1) dist = 1;
-        const force = COULOMB_CONSTANT / (dist * dist);
-        const fx = (force * dx) / dist;
-        const fy = (force * dy) / dist;
-        a.vx -= fx;
-        a.vy -= fy;
-        b.vx += fx;
-        b.vy += fy;
-        considered[j] = 1;
-      }
-    }
-
-    const sl = simLinksRef.current;
-    for (let li = 0; li < sl.length; li++) {
-      const link = sl[li];
-      let source: GraphNode | undefined;
-      let target: GraphNode | undefined;
-      for (let ni = 0; ni < n; ni++) {
-        const node = sn[ni];
-        if (node.id === link.source) source = node;
-        if (node.id === link.target) target = node;
-      }
-      if (!source || !target) continue;
-      let dx = target.x - source.x;
-      let dy = target.y - source.y;
-      let dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < 1) dist = 1;
-      const displacement = dist - SPRING_REST_LENGTH;
-      const force = SPRING_CONSTANT * displacement;
-      const fx = (force * dx) / dist;
-      const fy = (force * dy) / dist;
-      source.vx += fx;
-      source.vy += fy;
-      target.vx -= fx;
-      target.vy -= fy;
-    }
-
-    let maxVel = 0;
-    for (let i = 0; i < n; i++) {
-      const node = sn[i];
-      node.vx -= node.x * GRAVITY_CONSTANT;
-      node.vy -= node.y * GRAVITY_CONSTANT;
-    }
-
-    for (let i = 0; i < n; i++) {
-      const node = sn[i];
-      node.vx *= DAMPING;
-      node.vy *= DAMPING;
-
-      if (Math.abs(node.vx) < MIN_VELOCITY) node.vx = 0;
-      if (Math.abs(node.vy) < MIN_VELOCITY) node.vy = 0;
-
-      if (node.fx != null && node.fy != null) {
-        node.x = node.fx;
-        node.y = node.fy;
-        node.vx = 0;
-        node.vy = 0;
-        continue;
-      }
-
-      node.x += node.vx;
-      node.y += node.vy;
-
-      const vel = Math.abs(node.vx) + Math.abs(node.vy);
-      if (vel > maxVel) maxVel = vel;
-    }
-
-    if (maxVel < VELOCITY_THRESHOLD) {
-      isSimulatingRef.current = false;
-    }
-  }, []);
-
-  useEffect(() => {
-    if (nodes.length === 0) {
-      simNodesRef.current = [];
-      simLinksRef.current = [];
-      return;
-    }
-
-    const allAtOrigin = nodes.every(n => Math.abs(n.x) < 1 && Math.abs(n.y) < 1);
-    const hasAnyLink = links.some(l => nodes.some(n => n.id === l.source) && nodes.some(n => n.id === l.target));
-    const { width, height } = canvasSizeRef.current;
-    const cx = width / 2;
-    const cy = height / 2;
-
-    simNodesRef.current = nodes.map((n, i) => {
-      let x = n.x;
-      let y = n.y;
-      if (allAtOrigin) {
-        const radius = Math.min(width, height) * 0.3;
-        const angle = (2 * Math.PI * i) / nodes.length - Math.PI / 2;
-        x = radius * Math.cos(angle);
-        y = radius * Math.sin(angle);
-      }
-      return { ...n, x, y, vx: n.vx || 0, vy: n.vy || 0 };
-    });
-
-    simLinksRef.current = links.filter(
-      l => nodes.some(n => n.id === l.source) && nodes.some(n => n.id === l.target)
-    );
-
-    if (allAtOrigin || !hasAnyLink) {
-      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-      for (const n of simNodesRef.current) {
-        if (n.x < minX) minX = n.x;
-        if (n.x > maxX) maxX = n.x;
-        if (n.y < minY) minY = n.y;
-        if (n.y > maxY) maxY = n.y;
-      }
-      const graphW = maxX - minX || 400;
-      const graphH = maxY - minY || 400;
-      const gcX = (minX + maxX) / 2;
-      const gcY = (minY + maxY) / 2;
-
-      const scaleX = width / graphW;
-      const scaleY = height / graphH;
-      const fitZoom = Math.min(scaleX * 0.8, scaleY * 0.8, 2);
-
-      cameraRef.current = {
-        x: cx - gcX * fitZoom,
-        y: cy - gcY * fitZoom,
-        zoom: fitZoom,
-      };
-    } else {
-      cameraRef.current = { x: cx, y: cy, zoom: 1 };
-    }
-
-    isSimulatingRef.current = true;
-  }, [nodes, links]);
+  }, [simulatedNodes, simulatedLinks, hoveredNodeId, getConnectedNodeIds, cameraRef]);
 
   const tick = useCallback(() => {
-    if (isSimulatingRef.current) {
-      simulate();
-    }
     draw();
     rafIdRef.current = requestAnimationFrame(tick);
-  }, [simulate, draw]);
+  }, [draw]);
 
   useEffect(() => {
     rafIdRef.current = requestAnimationFrame(tick);
@@ -441,125 +263,18 @@ const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
     return () => observer.disconnect();
   }, []);
 
-  const getCanvasCoords = useCallback((clientX: number, clientY: number) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return { x: 0, y: 0 };
-    const rect = canvas.getBoundingClientRect();
-    return { x: clientX - rect.left, y: clientY - rect.top };
-  }, []);
-
-  const handleMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
-    const { x: mx, y: my } = getCanvasCoords(e.clientX, e.clientY);
-    mouseDownRef.current = { x: mx, y: my, isClick: true };
-    lastMouseRef.current = { x: mx, y: my };
-
-    const world = screenToWorld(mx, my);
-    const hit = hitTestNode(world.x, world.y);
-
-    if (hit) {
-      isDraggingNodeRef.current = true;
-      draggedNodeRef.current = hit;
-      hit.fx = hit.x;
-      hit.fy = hit.y;
-      isPanningRef.current = false;
-    } else {
-      isPanningRef.current = true;
-      isDraggingNodeRef.current = false;
-    }
-  }, [getCanvasCoords, screenToWorld, hitTestNode]);
-
-  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const { x: mx, y: my } = getCanvasCoords(e.clientX, e.clientY);
-
-    const dx = mx - mouseDownRef.current.x;
-    const dy = my - mouseDownRef.current.y;
-    if (Math.sqrt(dx * dx + dy * dy) > DRAG_THRESHOLD) {
-      mouseDownRef.current.isClick = false;
-    }
-
-    if (isDraggingNodeRef.current && draggedNodeRef.current) {
-      const world = screenToWorld(mx, my);
-      draggedNodeRef.current.x = world.x;
-      draggedNodeRef.current.y = world.y;
-      draggedNodeRef.current.fx = world.x;
-      draggedNodeRef.current.fy = world.y;
-    } else if (isPanningRef.current) {
-      const ddx = mx - lastMouseRef.current.x;
-      const ddy = my - lastMouseRef.current.y;
-      cameraRef.current.x += ddx;
-      cameraRef.current.y += ddy;
-    } else {
-      const world = screenToWorld(mx, my);
-      const hit = hitTestNode(world.x, world.y);
-      const newHover = hit ? hit.id : null;
-      if (newHover !== hoveredNodeIdRef.current) {
-        hoveredNodeIdRef.current = newHover;
-        canvas.style.cursor = newHover ? 'pointer' : 'default';
-      }
-    }
-
-    lastMouseRef.current = { x: mx, y: my };
-  }, [getCanvasCoords, screenToWorld, hitTestNode]);
-
-  const handleMouseUp = useCallback((_e: React.MouseEvent<HTMLCanvasElement>) => {
-    const wasClick = mouseDownRef.current.isClick;
-
-    if (isDraggingNodeRef.current && draggedNodeRef.current) {
-      if (wasClick) {
-        onNodeSelectRef.current?.(draggedNodeRef.current);
-      }
-      draggedNodeRef.current.fx = null;
-      draggedNodeRef.current.fy = null;
-      draggedNodeRef.current = null;
-      isDraggingNodeRef.current = false;
-    }
-
-    if (isPanningRef.current) {
-      if (wasClick) {
-        onNodeSelectRef.current?.(null);
-      }
-      isPanningRef.current = false;
-    }
-  }, []);
-
-  const handleMouseLeave = useCallback(() => {
-    hoveredNodeIdRef.current = null;
-    isPanningRef.current = false;
-    isDraggingNodeRef.current = false;
-    if (draggedNodeRef.current) {
-      draggedNodeRef.current.fx = null;
-      draggedNodeRef.current.fy = null;
-      draggedNodeRef.current = null;
-    }
-  }, []);
-
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const handler = (e: WheelEvent) => {
-      e.preventDefault();
       const rect = canvas.getBoundingClientRect();
-      const mx = e.clientX - rect.left;
-      const my = e.clientY - rect.top;
-
-      const delta = -e.deltaY * ZOOM_SPEED;
-      const oldZoom = cameraRef.current.zoom;
-      const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, oldZoom * (1 + delta)));
-
-      const worldX = (mx - cameraRef.current.x) / oldZoom;
-      const worldY = (my - cameraRef.current.y) / oldZoom;
-
-      cameraRef.current.x = mx - worldX * newZoom;
-      cameraRef.current.y = my - worldY * newZoom;
-      cameraRef.current.zoom = newZoom;
+      handleWheelZoom(e, rect);
     };
 
     canvas.addEventListener('wheel', handler, { passive: false });
     return () => canvas.removeEventListener('wheel', handler);
-  }, []);
+  }, [handleWheelZoom]);
 
   if (!isSupported) {
     return (
