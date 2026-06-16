@@ -5,6 +5,7 @@ import { InputField } from '../ui/InputField';
 import { TextAreaField } from '../ui/TextAreaField';
 import FileItem from '../FileItem';
 import { AiConfigSidebar } from './AiConfigSidebar';
+import { FileTree } from './FileTree';
 
 const MAX_FILES = 10;
 const MAX_FILE_SIZE_MB = 100;
@@ -296,6 +297,13 @@ const EditorContexto: React.FC<EditorContextoProps> = ({
             </button>
             <span className="ml-4 text-sm text-slate-400">{files.length} / {MAX_FILES} arquivos</span>
           </div>
+
+          {/* Mini-árvore de arquivos */}
+          {files.length > 0 && (
+            <div className="mb-4">
+              <FileTree files={files} max_height="200px" />
+            </div>
+          )}
 
           {/* Lista de arquivos */}
           <div className="mt-4 p-4 bg-slate-900/50 rounded-lg border border-slate-700 min-h-[100px] space-y-2">
