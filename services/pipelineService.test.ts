@@ -30,10 +30,11 @@ describe('pipelineService', () => {
     it('should run all steps successfully', async () => {
       vi.mocked(aiClient.generate).mockResolvedValue({ text: 'Step result' });
 
+      const mockFile = new File(['console.log(1)'], 'test.ts', { type: 'text/plain' });
       const result = await runPipeline(
         'Project description',
-        [{ file: { name: 'test.ts' }, content: 'console.log(1)' }],
-        { model: 'gemini-pro' }
+        [{ file: mockFile, content: 'console.log(1)', status: 'success' }],
+        { provider: 'gemini', model: 'gemini-pro' }
       );
 
       expect(result.results).toHaveLength(4);
@@ -51,7 +52,7 @@ describe('pipelineService', () => {
       const result = await runPipeline(
         'Project description',
         [],
-        { model: 'gemini-pro' },
+        { provider: 'gemini', model: 'gemini-pro' },
         controller.signal
       );
 
