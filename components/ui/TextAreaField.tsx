@@ -7,14 +7,25 @@ interface TextAreaFieldProps {
   placeholder?: string;
   rows?: number;
   required?: boolean;
+  disabled?: boolean;
   className?: string;
 }
 
-export function TextAreaField({ label, value, onChange, placeholder, rows = 4, required = false, className = '' }: TextAreaFieldProps) {
+export function TextAreaField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  rows = 4,
+  required = false,
+  disabled = false,
+  className = '',
+}: TextAreaFieldProps) {
   return (
     <div className={className}>
-      <label className="block text-sm font-medium text-slate-300">
+      <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1.5">
         {label}
+        {required && <span className="text-[var(--danger)] ml-0.5">*</span>}
       </label>
       <textarea
         value={value}
@@ -22,8 +33,9 @@ export function TextAreaField({ label, value, onChange, placeholder, rows = 4, r
         placeholder={placeholder}
         rows={rows}
         required={required}
-        className="mt-1 block w-full p-3 bg-slate-900/70 border border-slate-600 rounded-lg text-slate-100 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 transition"
-      ></textarea>
+        disabled={disabled}
+        className="mt-1 block w-full p-3 bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-lg text-[var(--text-primary)] text-sm placeholder:text-[var(--text-muted)] focus:border-[var(--border-focus)] focus:shadow-[0_0_0_3px_var(--accent-glow)] focus:outline-none transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed resize-y"
+      />
     </div>
   );
 }

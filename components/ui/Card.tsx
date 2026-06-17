@@ -3,11 +3,36 @@ import React from 'react';
 interface CardProps {
   children: React.ReactNode;
   className?: string;
+  hover?: boolean;
+  /** Remove padding interno (para cards com header/body customizados) */
+  noPadding?: boolean;
+  /** Adiciona glow sutil no hover (para cards interativos) */
+  glowOnHover?: boolean;
 }
 
-export function Card({ children, className = '' }: CardProps) {
+export function Card({
+  children,
+  className = '',
+  hover = false,
+  noPadding = false,
+  glowOnHover = false,
+}: CardProps) {
+  const hoverClasses = hover
+    ? 'hover:bg-[var(--bg-card-hover)] cursor-pointer'
+    : '';
+  const glowClasses = glowOnHover
+    ? 'hover:shadow-[0_0_20px_var(--accent-glow)]'
+    : '';
+
   return (
-    <div className={`bg-slate-800/50 border border-slate-700 rounded-2xl shadow-lg ${className}`}>
+    <div
+      className={`
+        bg-[var(--bg-card)] rounded-xl
+        ${noPadding ? '' : 'p-6'}
+        transition-all duration-200 ease-in-out
+        ${hoverClasses} ${glowClasses} ${className}
+      `}
+    >
       {children}
     </div>
   );
