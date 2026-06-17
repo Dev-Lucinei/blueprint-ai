@@ -10,6 +10,7 @@ const isApiKeyConfigured = (provider: AIProvider): boolean => {
     gemini: (import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_API_KEY || '') as string,
     openrouter: (import.meta.env.VITE_OPENROUTER_API_KEY || '') as string,
     openai: (import.meta.env.VITE_OPENAI_API_KEY || '') as string,
+    ollama: 'true', // Ollama roda local, não precisa de key
   };
   return !!keys[provider];
 };
