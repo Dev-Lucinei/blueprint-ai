@@ -4,11 +4,11 @@ import { Tab, FileObject, AIProvider, AIConfig, AppMode, AppState, AppAction, in
 import { getDocSystemInstruction, getRefinementSystemInstruction } from './services/geminiService';
 import { aiClient } from './services/aiProvider';
 import { usePipeline } from './hooks/usePipeline';
+import { useMediaQuery, BREAKPOINTS } from './hooks/useMediaQuery';
 import { parseGraphFromAI } from './services/pipelineService';
 import Header from './components/Header';
 import { Sidebar } from './components/layout/Sidebar';
 import EditorContexto from './components/editor/EditorContexto';
-
 import ResultsTab from './components/tabs/ResultsTab';
 import AnalyzeTab from './components/AnalyzeTab';
 import Toast from './components/Toast';
@@ -59,11 +59,23 @@ const App: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [chatHistory, setChatHistory] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([]);
 
-  // Ref para acesso ao estado atual em callbacks estáveis (compatibilidade com functional updater do setFiles)
+  // ===== Responsividade =====
+  const isMobile = useMediaQuery(BREAKPOINTS.mobile);
+  const isTablet = useMediaQuery(BREAKPOINTS.tablet);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  // Auto-collapse sidebar em mobile/tablet
+  useEffect(() => {
+    if (isMobile || isTablet) {
+      setSidebarCollapsed(true);
+    }
+  }, [isMobile, isTablet]);
+
+  // Ref para acesso ao estado atual em callbacks estáveis
   const stateRef = useRef(state);
   stateRef.current = state;
 
-  // --- Wrapper functions: mantêm assinaturas idênticas aos setters originais ---
+  // Wrapper functions
   const setActiveTab = useCallback((tab: Tab) => dispatch({ type: 'SET_ACTIVE_TAB', payload: tab }), []);
   const setAppMode = useCallback((mode: AppMode) => dispatch({ type: 'SET_APP_MODE', payload: mode }), []);
   const setProjectName = useCallback((name: string) => dispatch({ type: 'UPDATE_PROJECT', payload: { projectName: name } }), []);
@@ -76,10 +88,6 @@ const App: React.FC = () => {
   const setIsRefining = useCallback((refining: boolean) => dispatch({ type: 'SET_REFINING', payload: refining }), []);
   const setGeneratedMarkdown = useCallback((md: string) => dispatch({ type: 'SET_GENERATED_MD', payload: md }), []);
 
-  /**
-   * setFiles: suporta both value assignment e functional updater (React.SetStateAction<FileObject[]>).
-   * Necessário porque ContentTab usa o padrão setFiles(prev => prev.map(...)).
-   */
   const setFiles = useCallback((filesOrUpdater: FileObject[] | ((prev: FileObject[]) => FileObject[])) => {
     if (typeof filesOrUpdater === 'function') {
       dispatch({ type: 'SET_FILES', payload: filesOrUpdater(stateRef.current.files) });
@@ -105,8 +113,9 @@ const App: React.FC = () => {
       gemini: 'gemini-2.5-flash',
       openrouter: 'openai/gpt-4o',
       openai: 'gpt-4o',
+      ollama: 'qwen2.5:16K',
     };
-    setAiModel(defaults[aiProvider]);
+    setAiModel(defaults[aiProvider] || 'gemini-2.5-flash');
   }, [aiProvider, setAiModel]);
 
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
@@ -119,6 +128,7 @@ const App: React.FC = () => {
       gemini: (import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_API_KEY || '') as string,
       openrouter: (import.meta.env.VITE_OPENROUTER_API_KEY || '') as string,
       openai: (import.meta.env.VITE_OPENAI_API_KEY || '') as string,
+      ollama: 'true', // Ollama roda local, não precisa de key
     };
     return !!keys[provider];
   };
@@ -251,19 +261,61 @@ const App: React.FC = () => {
   }, []);
 
   return (
-    <div className="min- h-screen flex flex-col bg-surface-dark text-text-primary">
+    <div className="min-h-screen flex flex-col bg-[var(--bg-primary)] text-[var(--text-primary)]">
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
       <Header mode={appMode} setMode={setAppMode} />
 
       <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar — hidden em mobile, colapsável em tablet */}
         <Sidebar
           activeTab={activeTab}
           onTabChange={(tab) => dispatch({ type: 'SET_ACTIVE_TAB', payload: tab })}
+          isCollapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
         />
 
+        {/* Mobile tab bar (bottom) */}
+        {isMobile && (
+          <div
+            className="fixed bottom-0 left-0 right-0 z-50 flex md:hidden"
+            style={{
+              backgroundColor: 'var(--bg-sidebar)',
+              borderTop: '1px solid var(--border-subtle)',
+              padding: '8px 16px',
+              justifyContent: 'space-around',
+            }}
+          >
+            {([
+              { id: 'projeto' as Tab, label: 'Editor', icon: '📝' },
+              { id: 'analisar' as Tab, label: 'Pipeline', icon: '⚙️' },
+              { id: 'resultados' as Tab, label: 'Resultado', icon: '📊' },
+            ]).map(item => (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id)}
+                className="flex flex-col items-center gap-1 px-3 py-1 rounded-lg transition-colors duration-150"
+                style={{
+                  color: activeTab === item.id ? 'var(--accent-light)' : 'var(--text-muted)',
+                  backgroundColor: activeTab === item.id ? 'var(--accent-glow)' : 'transparent',
+                }}
+              >
+                <span className="text-lg">{item.icon}</span>
+                <span className="text-[10px] font-medium">{item.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="flex-1 flex flex-col overflow-hidden">
-          <main className="flex-1 overflow-y-auto p-4 lg:px-8 xl:px-4 max-w-7xl mx-auto w-full pb-24 lg:pb-4">
+          <main
+            className={`
+              flex-1 overflow-y-auto
+              p-4 lg:px-8 xl:px-4
+              max-w-7xl mx-auto w-full
+              pb-24 lg:pb-4
+            `}
+          >
             <div className={activeTab === 'projeto' ? '' : 'hidden'}>
               <EditorContexto
                 projectName={projectName}
@@ -285,7 +337,6 @@ const App: React.FC = () => {
               />
             </div>
 
-
             <div className={activeTab === 'resultados' ? '' : 'hidden'}>
               <ResultsTab
                 markdown={generatedMarkdown}
@@ -299,6 +350,7 @@ const App: React.FC = () => {
                 chatHistory={chatHistory}
               />
             </div>
+
             <div className={activeTab === 'analisar' ? '' : 'hidden'}>
               <AnalyzeTab
                 pipeline={pipeline}
