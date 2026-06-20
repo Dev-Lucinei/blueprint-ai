@@ -1,5 +1,5 @@
-
 import React, { useEffect } from 'react';
+import { CheckCircle, XCircle, Info } from 'lucide-react';
 
 interface ToastProps {
   message: string;
@@ -18,36 +18,40 @@ const Toast: React.FC<ToastProps> = ({ message, type, onClose }) => {
     };
   }, [onClose]);
 
-  const baseClasses = "fixed top-5 right-5 z-50 p-4 rounded-lg shadow-xl text-white flex items-center transition-all duration-300 transform";
-  
-  const typeClasses = {
-    success: 'bg-green-600/90 backdrop-blur-sm',
-    error: 'bg-red-600/90 backdrop-blur-sm',
-    info: 'bg-blue-600/90 backdrop-blur-sm',
+  const typeStyles = {
+    success: {
+      bg: 'bg-[var(--success)]/15 border-[var(--success)]',
+      text: 'text-[var(--success)]',
+      icon: <CheckCircle className="w-5 h-5" />,
+    },
+    error: {
+      bg: 'bg-[var(--danger)]/15 border-[var(--danger)]',
+      text: 'text-[var(--danger)]',
+      icon: <XCircle className="w-5 h-5" />,
+    },
+    info: {
+      bg: 'bg-[var(--accent)]/15 border-[var(--accent)]',
+      text: 'text-[var(--accent-light)]',
+      icon: <Info className="w-5 h-5" />,
+    },
   };
 
-  const icon = {
-    success: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ),
-    error: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ),
-    info: (
-       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    )
-  }
+  const styles = typeStyles[type];
 
   return (
-    <div className={`${baseClasses} ${typeClasses[type]}`} role="alert">
-      {icon[type]}
-      <span className="font-medium">{message}</span>
+    <div
+      className={`
+        fixed top-20 right-6 z-50
+        px-4 py-3 rounded-lg border
+        shadow-lg animate-slide-in
+        ${styles.bg} ${styles.text}
+      `}
+      role="alert"
+    >
+      <div className="flex items-center gap-2">
+        {styles.icon}
+        <span className="text-sm font-medium">{message}</span>
+      </div>
     </div>
   );
 };

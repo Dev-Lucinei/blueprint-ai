@@ -37,10 +37,10 @@ ${structure}
     <button
       onClick={handleClick}
       disabled={disabled || files.length === 0}
-      className="px-3 py-1.5 text-xs bg-purple-600/20 text-purple-300 border border-purple-500/30 rounded-md hover:bg-purple-600/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      className="px-3 py-1.5 text-xs bg-[var(--accent-glow)] text-[var(--accent-light)] border border-[var(--accent)]/30 rounded-md hover:bg-[var(--accent)]/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       title="Inserir estrutura de arquivos no contexto"
     >
-      📋 Injetar Estrutura
+      Injetar Estrutura
     </button>
   );
 }

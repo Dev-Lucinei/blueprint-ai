@@ -24,12 +24,12 @@ interface ResultsTabProps {
 type ViewMode = 'rendered' | 'raw' | 'graph';
 
 const FIXED_SECTIONS = [
-  { id: 'analise-funcional', label: 'Análise Funcional' },
+  { id: 'analise-funcional', label: 'Analise Funcional' },
   { id: 'diagramas-arquitetura', label: 'Diagramas de Arquitetura' },
   { id: 'modelo-dados', label: 'Modelo de Dados (ERD)' },
-  { id: 'requisitos-tecnicos', label: 'Requisitos Técnicos' },
+  { id: 'requisitos-tecnicos', label: 'Requisitos Tecnicos' },
   { id: 'grafo-conhecimento', label: 'Grafo de Conhecimento' },
-  { id: 'conclusao', label: 'Conclusão' },
+  { id: 'conclusao', label: 'Conclusao' },
 ];
 
 /* ===== Debounce Hook ===== */
@@ -313,7 +313,7 @@ const ResultsTab: React.FC<ResultsTabProps> = ({
           Gerando seu Blueprint...
         </h3>
         <p style={{ color: 'var(--text-secondary)', maxWidth: 400 }}>
-          Aguarde um momento enquanto a IA constrói a documentação completa do seu projeto.
+          Aguarde um momento enquanto a IA constroi a documentacao completa do seu projeto.
         </p>
       </div>
     );
@@ -338,10 +338,10 @@ const ResultsTab: React.FC<ResultsTabProps> = ({
           />
         </svg>
         <h3 style={{ fontSize: 20, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 8 }}>
-          Nenhum Resultado Disponível
+          Nenhum Resultado Disponivel
         </h3>
         <p style={{ color: 'var(--text-muted)', maxWidth: 400 }}>
-          Preencha os detalhes na aba "Editor" e gere a documentação para visualizar os resultados aqui.
+          Preencha os detalhes na aba "Editor" e gere a documentacao para visualizar os resultados aqui.
         </p>
       </div>
     );

@@ -263,9 +263,9 @@ function getLabelColor(status: Step['status']): string {
 function getStatusLabel(status: Step['status']): string {
   switch (status) {
     case 'done':
-      return 'Concluído';
+      return 'Concluido';
     case 'running':
-      return 'Em execução';
+      return 'Em execucao';
     case 'error':
       return 'Erro';
     default:

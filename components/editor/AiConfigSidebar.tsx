@@ -14,7 +14,6 @@ export function AiConfigSidebar({ aiProvider, aiModel, onSetAiConfig, isOpen, on
   const [ollamaModels, setOllamaModels] = useState<string[]>([]);
   const [ollamaStatus, setOllamaStatus] = useState<'checking' | 'online' | 'offline'>('checking');
 
-  // Buscar modelos do Ollama quando o provider for 'ollama'
   useEffect(() => {
     if (aiProvider === 'ollama') {
       fetchOllamaModels();
@@ -55,30 +54,27 @@ export function AiConfigSidebar({ aiProvider, aiModel, onSetAiConfig, isOpen, on
     : PROVIDER_MODELS[aiProvider] || [];
 
   return (
-    <div className={`transition-all duration-300 ${isOpen ? 'w-64' : 'w-12'} flex-shrink-0`}>
-      {/* Toggle button */}
+    <div className={`transition-all duration-300 ${isOpen ? 'w-full' : 'w-12'}`}>
       <button
         onClick={onToggle}
-        className="w-full p-2 bg-gray-800/50 border border-gray-700/50 rounded-lg hover:bg-gray-700/50 transition-colors flex items-center justify-center"
-        title={isOpen ? 'Recolher configurações' : 'Expandir configurações'}
+        className="w-full p-2 bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-lg hover:bg-[var(--bg-card-hover)] transition-colors flex items-center justify-center"
+        title={isOpen ? 'Recolher configuracoes' : 'Expandir configuracoes'}
       >
-        <span className="text-lg">⚙️</span>
-        {isOpen && <span className="ml-2 text-sm text-gray-300">Config IA</span>}
+        <span className="text-lg">...</span>
+        {isOpen && <span className="ml-2 text-sm text-[var(--text-secondary)]">Config IA</span>}
       </button>
 
-      {/* Sidebar content */}
       {isOpen && (
         <Card className="mt-2">
           <div className="space-y-4">
-            {/* Provider selector */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
                 Provedor
               </label>
               <select
                 value={aiProvider}
                 onChange={(e) => onSetAiConfig({ provider: e.target.value as AIProvider, model: '' })}
-                className="w-full px-3 py-2 bg-gray-700/50 border border-gray-600/50 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                className="w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-glow)]"
               >
                 {providers.map(p => (
                   <option key={p.id} value={p.id}>{p.name}</option>
@@ -86,15 +82,14 @@ export function AiConfigSidebar({ aiProvider, aiModel, onSetAiConfig, isOpen, on
               </select>
             </div>
 
-            {/* Model selector */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
                 Modelo
               </label>
               <select
                 value={aiModel}
                 onChange={(e) => onSetAiConfig({ model: e.target.value })}
-                className="w-full px-3 py-2 bg-gray-700/50 border border-gray-600/50 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                className="w-full px-3 py-2 bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-glow)]"
               >
                 {models.map(m => (
                   <option key={m} value={m}>{m}</option>
@@ -102,14 +97,13 @@ export function AiConfigSidebar({ aiProvider, aiModel, onSetAiConfig, isOpen, on
               </select>
             </div>
 
-            {/* Ollama status */}
             {aiProvider === 'ollama' && (
               <div className="flex items-center gap-2 text-sm">
                 <span className={`w-2 h-2 rounded-full ${
-                  ollamaStatus === 'online' ? 'bg-green-500' :
-                  ollamaStatus === 'checking' ? 'bg-yellow-500' : 'bg-red-500'
+                  ollamaStatus === 'online' ? 'bg-[var(--success)]' :
+                  ollamaStatus === 'checking' ? 'bg-[var(--warning)]' : 'bg-[var(--danger)]'
                 }`} />
-                <span className="text-gray-400">
+                <span className="text-[var(--text-muted)]">
                   {ollamaStatus === 'online' ? 'Ollama conectado' :
                    ollamaStatus === 'checking' ? 'Verificando...' : 'Ollama offline'}
                 </span>

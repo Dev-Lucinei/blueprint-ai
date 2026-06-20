@@ -1,6 +1,7 @@
 import React from 'react';
 
 interface CardProps {
+  title?: string;
   children: React.ReactNode;
   className?: string;
   hover?: boolean;
@@ -11,6 +12,7 @@ interface CardProps {
 }
 
 export function Card({
+  title,
   children,
   className = '',
   hover = false,
@@ -33,6 +35,9 @@ export function Card({
         ${hoverClasses} ${glowClasses} ${className}
       `}
     >
+      {title && (
+        <h3 className="text-sm font-bold text-[var(--text-primary)] mb-4">{title}</h3>
+      )}
       {children}
     </div>
   );

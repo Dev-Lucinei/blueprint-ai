@@ -17,6 +17,8 @@ const variantStyles: Record<string, string> = {
   icon: 'bg-[var(--accent)] text-white w-10 h-10 flex items-center justify-center hover:bg-[var(--accent-light)] focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--bg-primary)]',
   'accent-outline':
     'bg-transparent border border-[var(--accent)] text-[var(--accent-light)] hover:bg-[var(--accent-glow)] focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--bg-primary)]',
+  'accent-active':
+    'bg-[var(--accent-glow)] border border-[var(--accent)] text-[var(--accent-light)] focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--bg-primary)]',
 };
 
 const sizeStyles: Record<string, string> = {

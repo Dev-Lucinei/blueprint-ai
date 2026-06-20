@@ -14,6 +14,8 @@ import AnalyzeTab from './components/AnalyzeTab';
 import Toast from './components/Toast';
 import ProjectVisualizerModal from './components/ProjectVisualizerModal';
 
+import './src/index.css';
+
 function appReducer(state: AppState, action: AppAction): AppState {
   switch (action.type) {
     case 'SET_ACTIVE_TAB':
@@ -261,13 +263,20 @@ const App: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col bg-[var(--bg-primary)] text-[var(--text-primary)]">
+    <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
-      <Header mode={appMode} setMode={setAppMode} />
+      <Header
+        mode={appMode}
+        setMode={setAppMode}
+        projectName={projectName}
+        onExport={(format) => {
+          if (format === 'json') handleExportJSON();
+        }}
+      />
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar — hidden em mobile, colapsável em tablet */}
+      <div className="flex pt-14">
+        {/* Sidebar — hidden em mobile, colapsavel em tablet */}
         <Sidebar
           activeTab={activeTab}
           onTabChange={(tab) => dispatch({ type: 'SET_ACTIVE_TAB', payload: tab })}
@@ -287,9 +296,9 @@ const App: React.FC = () => {
             }}
           >
             {([
-              { id: 'projeto' as Tab, label: 'Editor', icon: '📝' },
-              { id: 'analisar' as Tab, label: 'Pipeline', icon: '⚙️' },
-              { id: 'resultados' as Tab, label: 'Resultado', icon: '📊' },
+              { id: 'projeto' as Tab, label: 'Editor', icon: '...' },
+              { id: 'analisar' as Tab, label: 'Pipeline', icon: '...' },
+              { id: 'resultados' as Tab, label: 'Resultado', icon: '...' },
             ]).map(item => (
               <button
                 key={item.id}
@@ -307,7 +316,7 @@ const App: React.FC = () => {
           </div>
         )}
 
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className={`flex-1 flex flex-col overflow-hidden ${sidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
           <main
             className={`
               flex-1 overflow-y-auto

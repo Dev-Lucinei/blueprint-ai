@@ -1,54 +1,65 @@
 import React from 'react';
 import { AppMode } from '../types';
+import { Button } from './ui/Button';
+import { Dropdown, DropdownItem } from './ui/Dropdown';
 
 interface HeaderProps {
   mode: AppMode;
   setMode: (mode: AppMode) => void;
+  projectName?: string;
+  onExport?: (format: string) => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ mode, setMode }) => {
+const Header: React.FC<HeaderProps> = ({ mode, setMode, projectName, onExport }) => {
+  const exportItems: DropdownItem[] = [
+    { id: 'md', label: 'Baixar .md' },
+    { id: 'json', label: 'Exportar JSON' },
+    { id: 'bundle', label: 'Exportar Bundle' },
+  ];
+
+  const handleExport = (id: string) => {
+    onExport?.(id);
+  };
+
   return (
     <header
       className="
-        bg-[var(--bg-sidebar)] backdrop-blur-md
-        p-4 shadow-lg sticky top-0 z-40
+        h-14
+        bg-[var(--bg-sidebar)]
         border-b border-[var(--border-subtle)]
+        flex items-center px-6
+        fixed top-0 w-full z-50
       "
     >
-      <div className="container mx-auto flex items-center justify-between max-w-7xl">
-        {/* Logo */}
-        <div className="flex items-center space-x-3">
-          <div
-            className="flex items-center justify-center w-9 h-9 rounded-lg"
-            style={{
-              background: 'linear-gradient(135deg, var(--accent), var(--accent-light))',
-              boxShadow: '0 0 12px var(--accent-glow)',
-            }}
-          >
-            <svg
-              className="h-5 w-5 text-white"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-              />
-            </svg>
-          </div>
-          <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[var(--accent-light)] to-[var(--accent)]">
-            Blueprint AI
-          </h1>
+      {/* Logo */}
+      <div className="flex items-center gap-3">
+        <div
+          className="w-8 h-8 rounded-lg flex items-center justify-center"
+          style={{
+            background: 'linear-gradient(135deg, var(--accent), var(--accent-light))',
+            boxShadow: '0 0 12px var(--accent-glow)',
+          }}
+        >
+          <span className="text-white font-bold text-sm">B</span>
         </div>
+        <span className="text-gray-100 font-bold text-lg">Blueprint AI</span>
+      </div>
 
-        {/* Mode Toggle */}
+      {/* Breadcrumb */}
+      <nav className="ml-8 flex items-center gap-2 text-sm">
+        <span className="text-[var(--text-muted)]">Projetos</span>
+        <span className="text-[var(--text-muted)]">/</span>
+        <span className="text-[var(--text-secondary)]">
+          {projectName || 'Novo Projeto'}
+        </span>
+      </nav>
+
+      {/* Mode Toggle */}
+      <div className="ml-auto flex items-center gap-3">
         <div className="flex items-center space-x-1 bg-[var(--bg-input)] p-1 rounded-lg border border-[var(--border-subtle)]">
           {([
-            { id: 'documentacao' as AppMode, label: 'Documentação' },
-            { id: 'analise' as AppMode, label: 'Análise' },
+            { id: 'documentacao' as AppMode, label: 'Documentacao' },
+            { id: 'analise' as AppMode, label: 'Analise' },
           ]).map((item) => (
             <button
               key={item.id}
@@ -67,6 +78,16 @@ const Header: React.FC<HeaderProps> = ({ mode, setMode }) => {
             </button>
           ))}
         </div>
+
+        <Button variant="ghost" size="sm">
+          Documentacao
+        </Button>
+
+        <Dropdown
+          trigger={<Button variant="primary" size="sm">Exportar</Button>}
+          items={exportItems}
+          onSelect={handleExport}
+        />
       </div>
     </header>
   );

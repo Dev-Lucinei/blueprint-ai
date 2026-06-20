@@ -50,13 +50,13 @@ function TreeNodeItem({ node, depth = 0 }: { node: TreeNode; depth?: number }) {
   return (
     <div>
       <div
-        className="flex items-center gap-1 py-0.5 hover:bg-slate-700/30 rounded px-1"
+        className="flex items-center gap-1 py-0.5 hover:bg-[var(--bg-card-hover)] rounded px-1"
         style={{ paddingLeft: `${indent}px` }}
       >
         <span className="text-xs">
-          {node.isDir ? '📁' : '📄'}
+          {node.isDir ? '...' : '...'}
         </span>
-        <span className="text-xs text-slate-300 truncate">{node.name}</span>
+        <span className="text-xs text-[var(--text-secondary)] truncate">{node.name}</span>
       </div>
       {node.children.map((child, i) => (
         <TreeNodeItem key={i} node={child} depth={depth + 1} />
@@ -74,11 +74,11 @@ export function FileTree({ files, max_height = '200px' }: FileTreeProps) {
 
   return (
     <div
-      className="bg-slate-800/30 border border-slate-700/50 rounded-lg overflow-y-auto"
+      className="bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-lg overflow-y-auto"
       style={{ maxHeight: max_height }}
     >
       <div className="p-2">
-        <div className="text-xs text-slate-400 mb-1 font-medium">Arquivos carregados</div>
+        <div className="text-xs text-[var(--text-muted)] mb-1 font-medium">Arquivos carregados</div>
         {tree.map((node, i) => (
           <TreeNodeItem key={i} node={node} />
         ))}
